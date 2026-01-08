@@ -90,9 +90,8 @@ const client = new ApolloClient({
   link: middleware.concat(
     afterware.concat(
       createHttpLink({
-        uri: process.env.NEXT_PUBLIC_GRAPHQL_URL,
+        uri: '/api/graphql', // Use local proxy to bypass CORS
         fetch,
-        credentials: 'omit', // No credentials needed for public queries
       }),
     ),
   ),

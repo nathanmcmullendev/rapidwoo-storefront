@@ -6,16 +6,34 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   try {
+    // Build headers to forward to WooCommerce
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+      'User-Agent': 'Mozilla/5.0',
+    };
+
+    // Forward session header from client if present
+    const sessionHeader = req.headers['woocommerce-session'];
+    if (sessionHeader) {
+      headers['woocommerce-session'] = Array.isArray(sessionHeader)
+        ? sessionHeader[0]
+        : sessionHeader;
+    }
+
     const response = await fetch('https://rapidwoo.com/e-commerce/graphql', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'User-Agent': 'Mozilla/5.0',
-      },
+      headers,
       body: JSON.stringify(req.body),
     });
 
     const data = await response.json();
+
+    // Forward session header back to client if present
+    const wooSession = response.headers.get('woocommerce-session');
+    if (wooSession) {
+      res.setHeader('woocommerce-session', wooSession);
+    }
+
     res.status(200).json(data);
   } catch (error) {
     console.error('GraphQL proxy error:', error);

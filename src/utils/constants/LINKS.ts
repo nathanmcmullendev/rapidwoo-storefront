@@ -7,18 +7,23 @@ interface ILinks {
 const LINKS: ILinks[] = [
   {
     id: 0,
-    title: 'Hjem',
+    title: 'Home',
     href: '/',
   },
   {
     id: 1,
-    title: 'Produkter',
-    href: '/produkter',
+    title: 'Products',
+    href: '/products',
   },
   {
     id: 2,
-    title: 'Kategorier',
+    title: 'Categories',
     href: '/kategorier',
+  },
+  {
+    id: 3,
+    title: 'Cart',
+    href: '/cart',
   },
 ];
 

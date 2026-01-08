@@ -27,6 +27,8 @@
   "license": "AGPL-3.0",
   "dependencies": {
     "@apollo/client": "^3.14.0",
+    "@stripe/react-stripe-js": "^5.4.1",
+    "@stripe/stripe-js": "^8.6.1",
     "@types/react": "^19.2.7",
     "algoliasearch": "^4.25.3",
     "autoprefixer": "^10.4.23",
@@ -40,6 +42,7 @@
     "react-dom": "19.2.3",
     "react-hook-form": "^7.70.0",
     "react-instantsearch-dom": "^6.40.4",
+    "stripe": "^20.1.2",
     "uuid": "^13.0.0",
     "zustand": "^5.0.9"
   },

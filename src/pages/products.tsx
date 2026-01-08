@@ -1,4 +1,4 @@
-// Client-side rendered products page
+// Client-side rendered products page (bypasses build-time GraphQL issues)
 import Head from 'next/head';
 import { useQuery } from '@apollo/client';
 import Layout from '@/components/Layout/Layout.component';
@@ -6,7 +6,7 @@ import ProductList from '@/components/Product/ProductList.component';
 import { FETCH_ALL_PRODUCTS_QUERY } from '@/utils/gql/GQL_QUERIES';
 import type { NextPage } from 'next';
 
-const Produkter: NextPage = () => {
+const Products: NextPage = () => {
   const { data, loading, error } = useQuery(FETCH_ALL_PRODUCTS_QUERY);
 
   if (loading) {
@@ -47,10 +47,11 @@ const Produkter: NextPage = () => {
       </Head>
 
       <div className="container mx-auto px-4 py-8">
-        <ProductList products={data.products.nodes} title="All Products" />
+        <h1 className="text-3xl font-bold text-gray-800 mb-8">All Products</h1>
+        <ProductList products={data.products.nodes} title="" />
       </div>
     </Layout>
   );
 };
 
-export default Produkter;
+export default Products;

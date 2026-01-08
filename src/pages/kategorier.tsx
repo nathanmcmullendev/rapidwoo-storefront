@@ -1,34 +1,49 @@
-import { NextPage, InferGetStaticPropsType, GetStaticProps } from 'next';
-
-import Categories from '@/components/Category/Categories.component';
+// Client-side rendered categories page
+import { useQuery } from '@apollo/client';
 import Layout from '@/components/Layout/Layout.component';
-
-import client from '@/utils/apollo/ApolloClient';
-
+import Categories from '@/components/Category/Categories.component';
 import { FETCH_ALL_CATEGORIES_QUERY } from '@/utils/gql/GQL_QUERIES';
+import type { NextPage } from 'next';
 
-/**
- * Category page displays all of the categories
- */
-const Kategorier: NextPage = ({
-  categories,
-}: InferGetStaticPropsType<typeof getStaticProps>) => (
-  <Layout title="Kategorier">
-    {categories && <Categories categories={categories} />}
-  </Layout>
-);
+const Kategorier: NextPage = () => {
+  const { data, loading, error } = useQuery(FETCH_ALL_CATEGORIES_QUERY);
+
+  if (loading) {
+    return (
+      <Layout title="Categories">
+        <div className="flex justify-center items-center min-h-[60vh]">
+          <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-blue-600"></div>
+        </div>
+      </Layout>
+    );
+  }
+
+  if (error) {
+    return (
+      <Layout title="Categories">
+        <div className="flex flex-col justify-center items-center min-h-[60vh]">
+          <p className="text-red-500 text-lg mb-4">Failed to load categories</p>
+          <p className="text-gray-500 text-sm">{error.message}</p>
+        </div>
+      </Layout>
+    );
+  }
+
+  if (!data?.productCategories?.nodes) {
+    return (
+      <Layout title="Categories">
+        <div className="flex justify-center items-center min-h-[60vh]">
+          <p className="text-gray-500">No categories found</p>
+        </div>
+      </Layout>
+    );
+  }
+
+  return (
+    <Layout title="Categories">
+      <Categories categories={data.productCategories.nodes} />
+    </Layout>
+  );
+};
 
 export default Kategorier;
-
-export const getStaticProps: GetStaticProps = async () => {
-  const result = await client.query({
-    query: FETCH_ALL_CATEGORIES_QUERY,
-  });
-
-  return {
-    props: {
-      categories: result.data.productCategories.nodes,
-    },
-    revalidate: 10,
-  };
-};

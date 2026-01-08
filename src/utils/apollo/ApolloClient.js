@@ -13,14 +13,22 @@ const SEVEN_DAYS = 7 * 24 * 60 * 60 * 1000; // 7 days in milliseconds
  * Middleware operation
  * If we have a session token in localStorage, add it to the GraphQL request as a Session header.
  */
-export const middleware = new ApolloLink(async (operation, forward) => {
+export const middleware = new ApolloLink((operation, forward) => {
   /**
    * If session data exist in local storage, set value as session header.
    * Here we also delete the session if it is older than 7 days
    */
-  const sessionData = process.browser
-    ? JSON.parse(localStorage.getItem('woo-session'))
-    : null;
+  const isBrowser = typeof window !== 'undefined';
+  let sessionData = null;
+
+  if (isBrowser) {
+    try {
+      const stored = localStorage.getItem('woo-session');
+      sessionData = stored ? JSON.parse(stored) : null;
+    } catch (e) {
+      console.error('Error parsing session data:', e);
+    }
+  }
 
   const headers = {};
 
@@ -35,15 +43,18 @@ export const middleware = new ApolloLink(async (operation, forward) => {
     } else {
       // If it's not, use the token
       headers['woocommerce-session'] = `Session ${token}`;
+      console.log('[Apollo Middleware] Adding session header:', token.substring(0, 20) + '...');
     }
+  } else {
+    console.log('[Apollo Middleware] No session token found');
   }
 
-  // Cookie-based authentication - no JWT tokens needed
-  // Cookies are automatically included with credentials: 'include'
-
-  operation.setContext({
-    headers,
-  });
+  operation.setContext(({ headers: existingHeaders = {} }) => ({
+    headers: {
+      ...existingHeaders,
+      ...headers,
+    },
+  }));
 
   return forward(operation);
 });
@@ -58,6 +69,7 @@ export const afterware = new ApolloLink((operation, forward) =>
     /**
      * Check for session header and update session in local storage accordingly.
      */
+    const isBrowser = typeof window !== 'undefined';
     const context = operation.getContext();
     const {
       response: { headers },
@@ -65,16 +77,19 @@ export const afterware = new ApolloLink((operation, forward) =>
 
     const session = headers?.get('woocommerce-session');
 
-    if (session && process.browser) {
+    if (session && isBrowser) {
+      console.log('[Apollo Afterware] Received session header:', session.substring(0, 30) + '...');
       if ('false' === session) {
         // Remove session data if session destroyed.
         localStorage.removeItem('woo-session');
+        console.log('[Apollo Afterware] Session destroyed, removed from localStorage');
       } else {
         // Always update session token when received
         localStorage.setItem(
           'woo-session',
           JSON.stringify({ token: session, createdTime: Date.now() }),
         );
+        console.log('[Apollo Afterware] Session saved to localStorage');
       }
     }
 
@@ -82,16 +97,17 @@ export const afterware = new ApolloLink((operation, forward) =>
   }),
 );
 
-const clientSide = typeof window === 'undefined';
+const isServer = typeof window === 'undefined';
 
 // Apollo GraphQL client.
 const client = new ApolloClient({
-  ssrMode: clientSide,
+  ssrMode: isServer,
   link: middleware.concat(
     afterware.concat(
       createHttpLink({
         uri: '/api/graphql', // Use local proxy to bypass CORS
         fetch,
+        credentials: 'same-origin',
       }),
     ),
   ),

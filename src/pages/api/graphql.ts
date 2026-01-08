@@ -14,11 +14,17 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     // Forward session header from client if present
     const sessionHeader = req.headers['woocommerce-session'];
+    console.log('[GraphQL Proxy] Incoming session header:', sessionHeader);
+
     if (sessionHeader) {
       headers['woocommerce-session'] = Array.isArray(sessionHeader)
         ? sessionHeader[0]
         : sessionHeader;
     }
+
+    // Log the operation name from the request body for debugging
+    const operationName = req.body?.operationName || 'unknown';
+    console.log(`[GraphQL Proxy] Operation: ${operationName}, Session sent: ${headers['woocommerce-session'] || 'none'}`);
 
     const response = await fetch('https://rapidwoo.com/e-commerce/graphql', {
       method: 'POST',
@@ -28,8 +34,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     const data = await response.json();
 
+    // Log any errors from WooCommerce
+    if (data.errors) {
+      console.error('[GraphQL Proxy] WooCommerce errors:', JSON.stringify(data.errors, null, 2));
+    }
+
     // Forward session header back to client if present
     const wooSession = response.headers.get('woocommerce-session');
+    console.log('[GraphQL Proxy] Response session header:', wooSession);
+
     if (wooSession) {
       res.setHeader('woocommerce-session', wooSession);
       // Expose header to browser JavaScript

@@ -60,6 +60,9 @@ const CheckoutFormWithStripe = () => {
         refetch();
       },
       onError: (error) => {
+        console.error('Checkout mutation error:', error);
+        console.error('GraphQL errors:', error.graphQLErrors);
+        console.error('Network error:', error.networkError);
         setRequestError(error);
         refetch();
       },
@@ -111,6 +114,12 @@ const CheckoutFormWithStripe = () => {
 
     if (!billingData) return;
 
+    // Log session info for debugging
+    const sessionData = typeof window !== 'undefined'
+      ? localStorage.getItem('woo-session')
+      : null;
+    console.log('Session data before checkout:', sessionData);
+
     // Create WooCommerce order with Stripe payment info
     const checkoutData = createCheckoutData({
       ...billingData,
@@ -123,6 +132,8 @@ const CheckoutFormWithStripe = () => {
       transactionId: paymentIntentId,
       isPaid: true,
     };
+
+    console.log('Checkout mutation input:', checkoutWithTransaction);
 
     checkout({
       variables: {
@@ -276,7 +287,15 @@ const CheckoutFormWithStripe = () => {
 
             {requestError && (
               <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-lg text-red-600">
-                An error occurred while processing your order. Please try again.
+                <p className="font-semibold">Order Error:</p>
+                <p>{requestError.message}</p>
+                {requestError.graphQLErrors?.length > 0 && (
+                  <ul className="mt-2 text-sm">
+                    {requestError.graphQLErrors.map((err, i) => (
+                      <li key={i}>{err.message}</li>
+                    ))}
+                  </ul>
+                )}
               </div>
             )}
 

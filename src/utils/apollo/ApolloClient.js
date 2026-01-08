@@ -63,14 +63,14 @@ export const afterware = new ApolloLink((operation, forward) =>
       response: { headers },
     } = context;
 
-    const session = headers.get('woocommerce-session');
+    const session = headers?.get('woocommerce-session');
 
     if (session && process.browser) {
       if ('false' === session) {
         // Remove session data if session destroyed.
         localStorage.removeItem('woo-session');
-        // Update session new data if changed.
-      } else if (!localStorage.getItem('woo-session')) {
+      } else {
+        // Always update session token when received
         localStorage.setItem(
           'woo-session',
           JSON.stringify({ token: session, createdTime: Date.now() }),

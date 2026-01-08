@@ -58,9 +58,8 @@ function getErrorMessage(error: any): string {
 export async function login(username: string, password: string) {
   try {
     const client = new ApolloClient({
-      uri: process.env.NEXT_PUBLIC_GRAPHQL_URL,
+      uri: '/api/graphql', // Use local proxy to bypass CORS
       cache: new InMemoryCache(),
-      credentials: 'include', // Include cookies in requests
     });
 
     const { data } = await client.mutate({

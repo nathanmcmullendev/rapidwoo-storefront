@@ -18,6 +18,11 @@ const AlgoliaSearchBox = () => {
   const [search, setSearch] = useState<string | null>(null);
   const [hasFocus, sethasFocus] = useState<boolean>(false);
 
+  // Disable Algolia if not configured
+  if (!process.env.NEXT_PUBLIC_ALGOLIA_APP_ID || process.env.NEXT_PUBLIC_ALGOLIA_APP_ID === 'changeme') {
+    return null;
+  }
+
   return (
     <div className="hidden mt-2 md:inline xl:inline">
       <div className="">

@@ -15,6 +15,11 @@ const searchClient = algoliasearch(
 const MobileSearch = () => {
   const [search, setSearch] = useState<string | null>(null);
   const [hasFocus, sethasFocus] = useState<boolean>(false);
+
+  // Disable Algolia if not configured
+  if (!process.env.NEXT_PUBLIC_ALGOLIA_APP_ID || process.env.NEXT_PUBLIC_ALGOLIA_APP_ID === 'changethis') {
+    return null;
+  }
   return (
     <div className="inline mt-4 md:hidden">
       <InstantSearch

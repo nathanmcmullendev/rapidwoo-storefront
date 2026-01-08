@@ -32,6 +32,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const wooSession = response.headers.get('woocommerce-session');
     if (wooSession) {
       res.setHeader('woocommerce-session', wooSession);
+      // Expose header to browser JavaScript
+      res.setHeader('Access-Control-Expose-Headers', 'woocommerce-session');
     }
 
     res.status(200).json(data);

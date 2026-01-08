@@ -16,7 +16,7 @@ const Navbar = () => {
             <div className="text-center">
               <Link href="/">
                 <span className="text-lg font-bold tracking-widest text-gray-900">
-                  NETTBUTIKK
+                  RAPIDWOO STORE
                 </span>
               </Link>
             </div>
@@ -26,11 +26,11 @@ const Navbar = () => {
           </div>
           <div className="hidden md:flex items-center justify-between">
             <div className="flex items-center space-x-8">
-              <Link href="/produkter">
+              <Link href="/products">
                 <span className="text-base uppercase tracking-wider group relative">
                   <span className="relative inline-block">
                     <span className="absolute -bottom-1 left-0 w-0 h-px bg-gray-900 group-hover:w-full transition-all duration-500"></span>
-                    Produkter
+                    Products
                   </span>
                 </span>
               </Link>
@@ -38,14 +38,14 @@ const Navbar = () => {
                 <span className="text-base uppercase tracking-wider group relative">
                   <span className="relative inline-block">
                     <span className="absolute -bottom-1 left-0 w-0 h-px bg-gray-900 group-hover:w-full transition-all duration-500"></span>
-                    Kategorier
+                    Categories
                   </span>
                 </span>
               </Link>
             </div>
             <Link href="/" className="hidden lg:block">
               <span className="text-xl font-bold tracking-widest text-gray-900 hover:text-gray-700 transition-colors">
-                NETTBUTIKK
+                RAPIDWOO STORE
               </span>
             </Link>
             <div className="flex items-center space-x-3">

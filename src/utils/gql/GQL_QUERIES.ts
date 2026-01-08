@@ -29,12 +29,12 @@ export const GET_SINGLE_PRODUCT = gql`
         regularPrice
         price
         id
-        allPaColors {
+        allPaColor {
           nodes {
             name
           }
         }
-        allPaSizes {
+        allPaSize {
           nodes {
             name
           }
@@ -140,13 +140,13 @@ export const FETCH_ALL_PRODUCTS_QUERY = gql`
               slug
             }
           }
-          allPaColors {
+          allPaColor {
             nodes {
               name
               slug
             }
           }
-          allPaSizes {
+          allPaSize {
             nodes {
               name
             }

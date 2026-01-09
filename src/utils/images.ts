@@ -1,15 +1,30 @@
 /**
  * Cloudinary Image Optimization Utility
- * Optimized for mobile-first 2-column product grid
+ *
+ * Uses Cloudinary's fetch API to optimize external images on-the-fly.
+ * This provides WebP/AVIF format conversion, quality optimization, and resizing
+ * without requiring images to be uploaded to Cloudinary.
+ *
+ * Benefits:
+ * - ~60KB per image vs multi-MB originals
+ * - Automatic WebP/AVIF based on browser support
+ * - CDN caching for fast global delivery
+ * - Zero client-side JavaScript overhead
  */
 
 const CLOUDINARY_CLOUD = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD || 'dh4qwuvuo';
 const CLOUDINARY_BASE = `https://res.cloudinary.com/${CLOUDINARY_CLOUD}/image/fetch`;
 
+/**
+ * Image size presets
+ * - thumbnail: Product grid cards (~30-50KB)
+ * - preview: Product detail page (~80-120KB)
+ * - full: Lightbox / high-res view (~150-200KB)
+ */
 export const IMAGE_SIZES = {
   thumbnail: 100,
-  grid: 300, // Reduced from 400 - optimal for 2-col mobile
-  preview: 600, // Reduced from 800
+  grid: 400,
+  preview: 800,
   full: 1200,
   hero: 1600,
 } as const;
@@ -18,20 +33,36 @@ export type ImageSize = keyof typeof IMAGE_SIZES;
 
 /**
  * Generates an optimized Cloudinary URL for a given source image
+ *
+ * @param sourceUrl - Original image URL (e.g., from WooCommerce)
+ * @param size - Size preset (thumbnail | preview | full)
+ * @returns Optimized Cloudinary fetch URL
+ *
+ * @example
+ * getOptimizedImageUrl('https://example.com/image.jpg', 'thumbnail')
+ * // => 'https://res.cloudinary.com/dh4qwuvuo/image/fetch/w_400,c_limit,q_auto,f_auto/https%3A%2F%2Fexample.com%2Fimage.jpg'
  */
 export function getOptimizedImageUrl(
   sourceUrl: string | undefined,
   size: ImageSize = 'preview',
 ): string {
+  // Return placeholder for missing images
   if (!sourceUrl) {
-    return '/placeholder.png';
+    return process.env.NEXT_PUBLIC_PLACEHOLDER_SMALL_IMAGE_URL || '/placeholder.png';
   }
 
+  // Don't double-process Cloudinary URLs
   if (sourceUrl.includes('res.cloudinary.com')) {
     return sourceUrl;
   }
 
   const width = IMAGE_SIZES[size];
+
+  // Transformation parameters:
+  // w_XXX = width constraint
+  // c_limit = don't upscale, only downscale
+  // q_auto = automatic quality optimization
+  // f_auto = automatic format (WebP/AVIF based on browser)
   const transforms = `w_${width},c_limit,q_auto,f_auto`;
   const encodedUrl = encodeURIComponent(sourceUrl);
 
@@ -39,27 +70,22 @@ export function getOptimizedImageUrl(
 }
 
 /**
- * Generates srcSet for product cards - only includes sizes needed for mobile
- * Avoids loading 1200px or 1600px images on product cards
- */
-export function getCardSrcSet(sourceUrl: string | undefined): string {
-  if (!sourceUrl || sourceUrl.includes('res.cloudinary.com')) return '';
-
-  const sizes = [150, 300, 450];
-  return sizes
-    .map((w) => {
-      const transforms = `w_${w},c_limit,q_auto,f_auto`;
-      const encodedUrl = encodeURIComponent(sourceUrl);
-      return `${CLOUDINARY_BASE}/${transforms}/${encodedUrl} ${w}w`;
-    })
-    .join(', ');
-}
-
-/**
- * Generates full srcSet for product detail pages
+ * Generates srcSet string for responsive images
+ *
+ * @param sourceUrl - Original image URL
+ * @returns srcSet string with all size variants
+ *
+ * @example
+ * getImageSrcSet('https://example.com/image.jpg')
+ * // => 'https://res.cloudinary.com/.../w_400/.../image.jpg 400w, .../w_800/... 800w, .../w_1200/... 1200w'
  */
 export function getImageSrcSet(sourceUrl: string | undefined): string {
-  if (!sourceUrl || sourceUrl.includes('res.cloudinary.com')) return '';
+  if (!sourceUrl) return '';
+
+  // Don't generate srcSet for already-optimized Cloudinary URLs
+  if (sourceUrl.includes('res.cloudinary.com')) {
+    return '';
+  }
 
   return (Object.keys(IMAGE_SIZES) as ImageSize[])
     .map((key) => {
@@ -70,6 +96,22 @@ export function getImageSrcSet(sourceUrl: string | undefined): string {
     .join(', ');
 }
 
-// Updated sizes for 2-column mobile grid
-export const CARD_SIZES = '(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw';
-export const DEFAULT_SIZES = '(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 50vw';
+/**
+ * Default sizes attribute for responsive images
+ * Matches the typical grid layout breakpoints
+ */
+export const DEFAULT_SIZES = '(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw';
+
+/**
+ * Props interface for optimized image components
+ */
+export interface OptimizedImageProps {
+  src: string | undefined;
+  alt: string;
+  size?: ImageSize;
+  className?: string;
+  loading?: 'eager' | 'lazy';
+  fetchPriority?: 'high' | 'low' | 'auto';
+  decoding?: 'sync' | 'async' | 'auto';
+  sizes?: string;
+}

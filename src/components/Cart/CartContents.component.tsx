@@ -91,9 +91,9 @@ const CartContents = () => {
                       '/placeholder.png'
                     }
                     alt={item.variation?.node?.name || item.product.node.name}
-                    layout="fill"
-                    objectFit="cover"
-                    className="rounded"
+                    fill
+                    sizes="96px"
+                    className="rounded object-cover"
                   />
                 </div>
                 <div className="flex-grow ml-4">

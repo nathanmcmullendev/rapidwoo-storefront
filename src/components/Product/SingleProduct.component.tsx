@@ -3,6 +3,7 @@ import { useState, useEffect, useMemo } from 'react';
 
 // Utils
 import { paddedPrice } from '@/utils/functions/functions';
+import { getOptimizedImageUrl, getImageSrcSet } from '@/utils/images';
 
 // Components
 import AddToCart, {
@@ -431,9 +432,14 @@ const SingleProduct = ({ product }: IProductRootObject) => {
               <div className="max-w-xl mx-auto aspect-[3/4] relative overflow-hidden bg-gray-100">
                 <img
                   id="product-image"
-                  src={currentImage || placeholderFallBack}
+                  src={getOptimizedImageUrl(currentImage || placeholderFallBack, 'full')}
+                  srcSet={getImageSrcSet(currentImage) || undefined}
+                  sizes="(max-width: 768px) 100vw, 50vw"
                   alt={selectedVariation?.name || product.name}
                   className="w-full h-full object-cover object-center transition duration-300 group-hover:scale-105"
+                  loading="eager"
+                  fetchPriority="high"
+                  decoding="sync"
                 />
               </div>
             </div>

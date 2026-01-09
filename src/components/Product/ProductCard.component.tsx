@@ -1,6 +1,6 @@
 import Link from 'next/link';
-import Image from 'next/image';
 import { paddedPrice } from '@/utils/functions/functions';
+import { getOptimizedImageUrl, getImageSrcSet, DEFAULT_SIZES } from '@/utils/images';
 
 interface ProductCardProps {
   databaseId: number;
@@ -13,10 +13,11 @@ interface ProductCardProps {
   image?: {
     sourceUrl?: string;
   };
+  /** True for above-fold images that should load eagerly */
+  preloaded?: boolean;
 }
 
 const ProductCard = ({
-  databaseId,
   name,
   price,
   regularPrice,
@@ -24,24 +25,31 @@ const ProductCard = ({
   onSale,
   slug,
   image,
+  preloaded = false,
 }: ProductCardProps) => {
   // Add padding/empty character after currency symbol
   const formattedPrice = price ? paddedPrice(price, '$') : price;
   const formattedRegularPrice = regularPrice ? paddedPrice(regularPrice, '$') : regularPrice;
   const formattedSalePrice = salePrice ? paddedPrice(salePrice, '$') : salePrice;
 
+  // Generate optimized Cloudinary URLs
+  const imageUrl = getOptimizedImageUrl(image?.sourceUrl, 'preview');
+  const srcSet = getImageSrcSet(image?.sourceUrl);
+
   return (
     <div className="group">
       <div className="aspect-[3/4] overflow-hidden bg-gray-100 relative">
         <Link href={`/product/${slug}`}>
           {image?.sourceUrl ? (
-            <Image
-              src={image.sourceUrl}
+            <img
+              src={imageUrl}
               alt={name}
-              fill
+              srcSet={srcSet || undefined}
+              sizes={srcSet ? DEFAULT_SIZES : undefined}
               className="w-full h-full object-cover object-center transition duration-300 group-hover:scale-105"
-              priority={databaseId === 1}
-              sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
+              loading={preloaded ? 'eager' : 'lazy'}
+              fetchPriority={preloaded ? 'high' : 'auto'}
+              decoding={preloaded ? 'sync' : 'async'}
             />
           ) : (
             <div className="h-full w-full bg-gray-100 flex items-center justify-center">

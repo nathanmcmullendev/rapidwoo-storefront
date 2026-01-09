@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { v4 as uuidv4 } from 'uuid';
 
 import { filteredVariantPrice, paddedPrice } from '@/utils/functions/functions';
+import { getOptimizedImageUrl, getImageSrcSet, DEFAULT_SIZES } from '@/utils/images';
 
 interface Image {
   __typename: string;
@@ -53,16 +54,7 @@ const DisplayProducts = ({ products }: IDisplayProductsProps) => (
     >
       {products ? (
         products.map(
-          ({
-            name,
-            price,
-            regularPrice,
-            salePrice,
-            onSale,
-            slug,
-            image,
-            variations,
-          }) => {
+          ({ name, price, regularPrice, salePrice, onSale, slug, image, variations }, index) => {
             // Add padding/empty character after currency symbol here
             if (price) {
               price = paddedPrice(price, '$');
@@ -74,27 +66,26 @@ const DisplayProducts = ({ products }: IDisplayProductsProps) => (
               salePrice = paddedPrice(salePrice, '$');
             }
 
+            // First 6 products are above fold - load eagerly for LCP
+            const isAboveFold = index < 6;
+            const imageUrl = getOptimizedImageUrl(image?.sourceUrl, 'preview');
+            const srcSet = getImageSrcSet(image?.sourceUrl);
+
             return (
               <div key={uuidv4()} className="group">
                 <Link href={`/product/${encodeURIComponent(slug)}`}>
                   <div className="aspect-[3/4] relative overflow-hidden bg-gray-100">
-                    {image ? (
-                      <img
-                        id="product-image"
-                        className="w-full h-full object-cover object-center transition duration-300 group-hover:scale-105"
-                        alt={name}
-                        src={image.sourceUrl}
-                      />
-                    ) : (
-                      <img
-                        id="product-image"
-                        className="w-full h-full object-cover object-center transition duration-300 group-hover:scale-105"
-                        alt={name}
-                        src={
-                          process.env.NEXT_PUBLIC_PLACEHOLDER_SMALL_IMAGE_URL
-                        }
-                      />
-                    )}
+                    <img
+                      id="product-image"
+                      className="w-full h-full object-cover object-center transition duration-300 group-hover:scale-105"
+                      alt={name}
+                      src={imageUrl}
+                      srcSet={srcSet || undefined}
+                      sizes={srcSet ? DEFAULT_SIZES : undefined}
+                      loading={isAboveFold ? 'eager' : 'lazy'}
+                      fetchPriority={isAboveFold ? 'high' : 'auto'}
+                      decoding={isAboveFold ? 'sync' : 'async'}
+                    />
                   </div>
                 </Link>
                 <Link href={`/product/${encodeURIComponent(slug)}`}>

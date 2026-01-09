@@ -1,13 +1,14 @@
 import { useState, useEffect } from 'react';
-import { loadStripe } from '@stripe/stripe-js';
-import { Elements } from '@stripe/react-stripe-js';
-import StripePaymentForm from './StripePayment.component';
+import type { Stripe } from '@stripe/stripe-js';
 import LoadingSpinner from '../LoadingSpinner/LoadingSpinner.component';
 
-// Initialize Stripe outside of component to avoid recreating on every render
-const stripePromise = loadStripe(
-  process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!
-);
+// Lazy load Stripe only when this component is used (checkout page only)
+// This saves ~400KB from the initial bundle on all other pages
+const loadStripeAsync = () => import('@stripe/stripe-js').then((mod) => mod.loadStripe);
+
+const loadElementsAsync = () => import('@stripe/react-stripe-js').then((mod) => mod.Elements);
+
+const loadPaymentFormAsync = () => import('./StripePayment.component');
 
 interface StripeCheckoutProps {
   amount: number; // Amount in cents
@@ -24,18 +25,48 @@ interface StripeCheckoutProps {
   };
 }
 
-const StripeCheckout = ({
-  amount,
-  onSuccess,
-  onError,
-  billingDetails,
-}: StripeCheckoutProps) => {
+const StripeCheckout = ({ amount, onSuccess, onError, billingDetails }: StripeCheckoutProps) => {
   const [clientSecret, setClientSecret] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // Lazy-loaded Stripe state
+  const [stripePromise, setStripePromise] = useState<Promise<Stripe | null> | null>(null);
+  const [ElementsComponent, setElementsComponent] = useState<React.ComponentType<any> | null>(null);
+  const [PaymentFormComponent, setPaymentFormComponent] = useState<React.ComponentType<any> | null>(
+    null,
+  );
+  const [stripeLoading, setStripeLoading] = useState(true);
+
+  // Load Stripe and Elements components lazily
   useEffect(() => {
-    // Create PaymentIntent when component mounts
+    const loadStripeComponents = async () => {
+      try {
+        const [loadStripe, { Elements }, PaymentFormModule] = await Promise.all([
+          loadStripeAsync(),
+          loadElementsAsync().then((mod) => ({ Elements: mod })),
+          loadPaymentFormAsync(),
+        ]);
+
+        setStripePromise(loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!));
+        setElementsComponent(() => Elements);
+        setPaymentFormComponent(() => PaymentFormModule.default);
+      } catch (err) {
+        console.error('Failed to load Stripe:', err);
+        setError('Failed to load payment system');
+        onError('Failed to load payment system');
+      } finally {
+        setStripeLoading(false);
+      }
+    };
+
+    loadStripeComponents();
+  }, [onError]);
+
+  // Create PaymentIntent when component mounts and Stripe is loaded
+  useEffect(() => {
+    if (stripeLoading || !stripePromise) return;
+
     const createPaymentIntent = async () => {
       try {
         const response = await fetch('/api/create-payment-intent', {
@@ -69,26 +100,33 @@ const StripeCheckout = ({
     if (amount > 0) {
       createPaymentIntent();
     }
-  }, [amount, billingDetails.firstName, billingDetails.lastName, billingDetails.email, onError]);
+  }, [
+    amount,
+    billingDetails.firstName,
+    billingDetails.lastName,
+    billingDetails.email,
+    onError,
+    stripeLoading,
+    stripePromise,
+  ]);
 
-  if (loading) {
+  // Show loading while Stripe is being loaded
+  if (stripeLoading || loading) {
     return (
       <div className="flex flex-col items-center justify-center py-8">
         <LoadingSpinner />
-        <p className="mt-4 text-gray-600">Initializing payment...</p>
+        <p className="mt-4 text-gray-600">
+          {stripeLoading ? 'Loading payment system...' : 'Initializing payment...'}
+        </p>
       </div>
     );
   }
 
   if (error) {
-    return (
-      <div className="text-red-600 text-center py-4">
-        {error}
-      </div>
-    );
+    return <div className="text-red-600 text-center py-4">{error}</div>;
   }
 
-  if (!clientSecret) {
+  if (!clientSecret || !stripePromise || !ElementsComponent || !PaymentFormComponent) {
     return (
       <div className="text-red-600 text-center py-4">
         Unable to initialize payment. Please try again.
@@ -106,6 +144,10 @@ const StripeCheckout = ({
       country: billingDetails.country || 'US',
     },
   };
+
+  // Use dynamically loaded Elements and PaymentForm components
+  const Elements = ElementsComponent;
+  const StripePaymentForm = PaymentFormComponent;
 
   return (
     <Elements

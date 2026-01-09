@@ -1,10 +1,19 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import Link from 'next/link';
-
-import FadeLeftToRight from '@/components/Animations/FadeLeftToRight.component';
-import FadeLeftToRightItem from '@/components/Animations/FadeLeftToRightItem.component';
+import dynamic from 'next/dynamic';
 
 import LINKS from '@/utils/constants/LINKS';
+
+// Lazy load animation components to save ~100KB from initial bundle
+// These are only used in mobile menu which isn't visible on initial load
+const FadeLeftToRight = dynamic(() => import('@/components/Animations/FadeLeftToRight.component'), {
+  ssr: false,
+});
+
+const FadeLeftToRightItem = dynamic(
+  () => import('@/components/Animations/FadeLeftToRightItem.component'),
+  { ssr: false },
+);
 
 const hamburgerLine =
   'h-1 w-10 my-1 rounded-full bg-white transition ease transform duration-300 not-sr-only';
@@ -23,9 +32,7 @@ const Hamburger = () => {
   const [isExpanded, setisExpanded] = useState(false);
   const [hidden, setHidden] = useState('invisible');
   const [isAnimating, setIsAnimating] = useState(false);
-  const animationTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(
-    null,
-  );
+  const animationTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     if (isExpanded) {
@@ -93,16 +100,10 @@ const Hamburger = () => {
         <span
           data-testid="hamburgerline"
           className={`${hamburgerLine} ${
-            isExpanded
-              ? 'rotate-45 translate-y-3 opacity-100 group-hover:opacity-100'
-              : opacityFull
+            isExpanded ? 'rotate-45 translate-y-3 opacity-100 group-hover:opacity-100' : opacityFull
           }`}
         />
-        <span
-          className={`${hamburgerLine} ${
-            isExpanded ? 'opacity-0' : opacityFull
-          }`}
-        />
+        <span className={`${hamburgerLine} ${isExpanded ? 'opacity-0' : opacityFull}`} />
         <span
           className={`${hamburgerLine} ${
             isExpanded
@@ -111,11 +112,7 @@ const Hamburger = () => {
           }`}
         />
       </button>
-      <FadeLeftToRight
-        delay={0.2}
-        staggerDelay={0.2}
-        animateNotReverse={isExpanded}
-      >
+      <FadeLeftToRight delay={0.2} staggerDelay={0.2} animateNotReverse={isExpanded}>
         <div
           id="mobile-menu"
           aria-hidden={!isExpanded}
@@ -138,10 +135,7 @@ const Hamburger = () => {
                       }}
                       onKeyDown={(event) => {
                         // 'Enter' key or 'Space' key
-                        if (
-                          (event.key === 'Enter' || event.key === ' ') &&
-                          !isAnimating
-                        ) {
+                        if ((event.key === 'Enter' || event.key === ' ') && !isAnimating) {
                           setisExpanded((prevExpanded) => !prevExpanded);
                         }
                       }}

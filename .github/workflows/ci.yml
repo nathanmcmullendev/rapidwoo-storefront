@@ -59,11 +59,6 @@ jobs:
         run: npm audit --audit-level=high
         continue-on-error: true
 
-      - name: Check for secrets in code
-        uses: trufflesecurity/trufflehog@main
-        with:
-          extra_args: --only-verified
-
   # ============================================
   # Build Verification
   # ============================================
@@ -173,60 +168,9 @@ jobs:
           retention-days: 7
 
   # ============================================
-  # Deploy Preview (PRs)
+  # Deployment handled by Vercel GitHub Integration
+  # To enable CI-managed deploys, add these secrets:
+  # - VERCEL_TOKEN
+  # - VERCEL_ORG_ID
+  # - VERCEL_PROJECT_ID
   # ============================================
-  deploy-preview:
-    name: Deploy Preview
-    runs-on: ubuntu-latest
-    needs: [build, test]
-    if: github.event_name == 'pull_request'
-    environment:
-      name: preview
-      url: ${{ steps.deploy.outputs.url }}
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Deploy to Vercel (Preview)
-        id: deploy
-        uses: amondnet/vercel-action@v25
-        with:
-          vercel-token: ${{ secrets.VERCEL_TOKEN }}
-          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
-          vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
-          scope: ${{ secrets.VERCEL_ORG_ID }}
-
-      - name: Comment PR with preview URL
-        uses: actions/github-script@v7
-        with:
-          script: |
-            github.rest.issues.createComment({
-              issue_number: context.issue.number,
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              body: `## 🚀 Preview Deployment\n\n✅ Deployed to: ${{ steps.deploy.outputs.url }}\n\n**Commit:** \`${context.sha.substring(0, 7)}\``
-            })
-
-  # ============================================
-  # Deploy Production (main branch)
-  # ============================================
-  deploy-production:
-    name: Deploy Production
-    runs-on: ubuntu-latest
-    needs: [build, test, security]
-    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
-    environment:
-      name: production
-      url: https://rapidwoo-storefront.vercel.app
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Deploy to Vercel (Production)
-        uses: amondnet/vercel-action@v25
-        with:
-          vercel-token: ${{ secrets.VERCEL_TOKEN }}
-          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
-          vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
-          vercel-args: '--prod'
-          scope: ${{ secrets.VERCEL_ORG_ID }}

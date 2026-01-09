@@ -6,7 +6,7 @@ export function hasCredentials() {
   if (typeof window === 'undefined') {
     return false; // Server-side, no credentials available
   }
-  
+
   // With cookie-based auth, we'll check if user is logged in through a query
   // For now, we'll return false and let components handle the check
   return false;
@@ -22,7 +22,7 @@ function getErrorMessage(error: any): string {
   if (error.graphQLErrors && error.graphQLErrors.length > 0) {
     const graphQLError = error.graphQLErrors[0];
     const message = graphQLError.message;
-    
+
     // Map GraphQL error messages to user-friendly messages
     switch (message) {
       case 'invalid_username':
@@ -60,6 +60,7 @@ export async function login(username: string, password: string) {
     const client = new ApolloClient({
       uri: '/api/graphql', // Use local proxy to bypass CORS
       cache: new InMemoryCache(),
+      connectToDevTools: false,
     });
 
     const { data } = await client.mutate({

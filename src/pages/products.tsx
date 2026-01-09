@@ -46,9 +46,8 @@ const Products: NextPage<InferGetStaticPropsType<typeof getStaticProps>> = ({ pr
         <title>Products | RapidWoo Store</title>
       </Head>
 
-      <div className="container mx-auto px-4 py-8">
-        <h1 className="text-3xl font-bold text-gray-800 mb-8">All Products</h1>
-        <ProductList products={products as any} title="" />
+      <div className="container mx-auto px-3 py-3 md:px-4 md:py-4">
+        <ProductList products={products as any} title="All Products" />
       </div>
     </Layout>
   );

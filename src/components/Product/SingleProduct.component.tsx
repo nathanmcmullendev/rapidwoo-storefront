@@ -5,7 +5,11 @@ import { useState, useEffect, useMemo } from 'react';
 import { paddedPrice } from '@/utils/functions/functions';
 
 // Components
-import AddToCart, { IProductRootObject, IVariationNodes } from './AddToCart.component';
+import AddToCart, {
+  IProductRootObject,
+  IVariationNodes,
+  IDefaultAttribute,
+} from './AddToCart.component';
 import LoadingSpinner from '@/components/LoadingSpinner/LoadingSpinner.component';
 
 const SingleProduct = ({ product }: IProductRootObject) => {
@@ -29,18 +33,46 @@ const SingleProduct = ({ product }: IProductRootObject) => {
     setCurrentImage(product.image?.sourceUrl || placeholderFallBack);
   }, [product.image]);
 
-  // Set default variation on mount (first available variant, like WooCommerce)
+  // Helper function to find variant matching default attributes
+  const findDefaultVariant = (): IVariationNodes | null => {
+    if (!product.variations || product.variations.nodes.length === 0) {
+      return null;
+    }
+
+    const defaultAttrs = product.defaultAttributes?.nodes;
+
+    // If no default attributes set, return first variant
+    if (!defaultAttrs || defaultAttrs.length === 0) {
+      return product.variations.nodes[0];
+    }
+
+    // Find variant that matches all default attributes
+    const matchingVariant = product.variations.nodes.find((variant: IVariationNodes) => {
+      if (!variant.attributes?.nodes) return false;
+
+      // Check if all default attributes match this variant's attributes
+      return defaultAttrs.every((defaultAttr: IDefaultAttribute) => {
+        const variantAttr = variant.attributes?.nodes.find(
+          (attr) => attr.name.toLowerCase() === defaultAttr.name.toLowerCase(),
+        );
+        return variantAttr && variantAttr.value.toLowerCase() === defaultAttr.value.toLowerCase();
+      });
+    });
+
+    // Return matching variant or fall back to first variant
+    return matchingVariant || product.variations.nodes[0];
+  };
+
+  // Set default variation on mount (using WooCommerce default attributes)
   useEffect(() => {
     setIsLoading(false);
     if (product.variations && product.variations.nodes.length > 0) {
-      // Find first in-stock variant, or fallback to first variant
-      const inStockVariant = product.variations.nodes.find(
-        (v: IVariationNodes) => v.stockStatus === 'IN_STOCK' || v.stockQuantity > 0,
-      );
-      const defaultVariant = inStockVariant || product.variations.nodes[0];
-      setSelectedVariationId(defaultVariant.databaseId);
+      const defaultVariant = findDefaultVariant();
+      if (defaultVariant) {
+        setSelectedVariationId(defaultVariant.databaseId);
+      }
     }
-  }, [product.variations]);
+  }, [product.variations, product.defaultAttributes]);
 
   // Update image when variant selection changes
   useEffect(() => {

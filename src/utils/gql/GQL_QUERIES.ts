@@ -29,6 +29,14 @@ export const GET_SINGLE_PRODUCT = gql`
         regularPrice
         price
         id
+        defaultAttributes {
+          nodes {
+            id
+            attributeId
+            name
+            value
+          }
+        }
         allPaColor {
           nodes {
             name
@@ -54,6 +62,13 @@ export const GET_SINGLE_PRODUCT = gql`
               id
               sourceUrl
               altText
+            }
+            attributes {
+              nodes {
+                id
+                name
+                value
+              }
             }
           }
         }

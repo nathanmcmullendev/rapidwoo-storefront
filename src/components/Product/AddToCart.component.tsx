@@ -40,6 +40,19 @@ interface IAllPaSizes {
   nodes: IVariationNode[];
 }
 
+export interface IVariationAttribute {
+  id: string;
+  name: string;
+  value: string;
+}
+
+export interface IDefaultAttribute {
+  id: string;
+  attributeId: number;
+  name: string;
+  value: string;
+}
+
 export interface IVariationNodes {
   __typename: string;
   id: string;
@@ -55,6 +68,9 @@ export interface IVariationNodes {
     id: string;
     sourceUrl: string;
     altText?: string;
+  };
+  attributes?: {
+    nodes: IVariationAttribute[];
   };
 }
 
@@ -80,6 +96,9 @@ export interface IProduct {
   allPaColors?: IAllPaColors;
   allPaSizes?: IAllPaSizes;
   variations?: IVariations;
+  defaultAttributes?: {
+    nodes: IDefaultAttribute[];
+  };
 }
 
 export interface IProductRootObject {

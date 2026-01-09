@@ -1,6 +1,6 @@
 /*eslint complexity: ["error", 25]*/
 import { useState, useEffect } from 'react';
-import { useQuery, useMutation, ApolloError } from '@apollo/client';
+import { useQuery, useMutation, ApolloError, useApolloClient } from '@apollo/client';
 import { useForm, FormProvider } from 'react-hook-form';
 
 // Components
@@ -25,6 +25,7 @@ import { INPUT_FIELDS } from '@/utils/constants/INPUT_FIELDS';
 type PaymentMethod = 'stripe' | 'cod';
 
 const CheckoutFormWithStripe = () => {
+  const apolloClient = useApolloClient();
   const { cart, clearWooCommerceSession, syncWithWooCommerce } = useCartStore();
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('stripe');
   const [requestError, setRequestError] = useState<ApolloError | null>(null);
@@ -55,7 +56,8 @@ const CheckoutFormWithStripe = () => {
     onCompleted: () => {
       clearWooCommerceSession();
       setOrderCompleted(true);
-      refetch();
+      // Clear Apollo cache to prevent stale cart data
+      apolloClient.resetStore();
     },
     onError: (error) => {
       console.error('Checkout mutation error:', error);

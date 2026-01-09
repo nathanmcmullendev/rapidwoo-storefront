@@ -182,6 +182,27 @@ const SingleProduct = ({ product }: IProductRootObject) => {
   useEffect(() => {
     setIsLoading(false);
 
+    // DEBUG: Log variation stock data to console
+    if (product.variations?.nodes?.length) {
+      console.log('=== PRODUCT VARIATIONS DEBUG ===');
+      console.log('Product:', product.name);
+      console.log('Available Colors:', availableColors);
+      console.log('Available Sizes:', availableSizes);
+      console.log('Variations:');
+      product.variations.nodes.forEach((v) => {
+        const colorAttr = v.attributes?.nodes.find(
+          (a) => a.name.toLowerCase().replace('pa_', '') === 'color',
+        )?.value;
+        const sizeAttr = v.attributes?.nodes.find(
+          (a) => a.name.toLowerCase().replace('pa_', '') === 'size',
+        )?.value;
+        console.log(
+          `  ${colorAttr || '-'} / ${sizeAttr || '-'}: stockStatus=${v.stockStatus}, stockQuantity=${v.stockQuantity}`,
+        );
+      });
+      console.log('================================');
+    }
+
     if (!product.variations?.nodes?.length) {
       setCurrentImage(product.image?.sourceUrl || placeholderFallBack);
       return;
@@ -331,32 +352,11 @@ const SingleProduct = ({ product }: IProductRootObject) => {
 
             {/* Product Details Container */}
             <div className="flex flex-col">
-              <h1 className="text-xl font-bold text-center md:text-left mb-4">{product.name}</h1>
+              <h1 className="text-2xl font-bold text-center md:text-left mb-4">{product.name}</h1>
 
-              {/* Selected Variant Info */}
-              {selectedVariation && (
-                <p className="text-md text-gray-600 text-center md:text-left mb-2">
-                  {selectedColor && <span className="capitalize">{selectedColor}</span>}
-                  {selectedColor && selectedSize && ' / '}
-                  {selectedSize && <span className="uppercase">{selectedSize}</span>}
-                </p>
-              )}
-
-              {/* Price Display */}
-              <div className="text-center md:text-left mb-6">
-                {isOnSale && displayRegularPrice ? (
-                  <div className="flex flex-col md:flex-row items-center md:items-start gap-2">
-                    <p className="text-xl font-bold text-red-600">{displayPrice}</p>
-                    <p className="text-xl text-gray-500 line-through">{displayRegularPrice}</p>
-                  </div>
-                ) : (
-                  <p className="text-xl font-bold">{displayPrice}</p>
-                )}
-              </div>
-
-              {/* Description */}
+              {/* Description - moved to top for context */}
               {descriptionText && (
-                <p className="text-lg mb-6 text-center md:text-left">{descriptionText}</p>
+                <p className="text-gray-600 mb-6 text-center md:text-left">{descriptionText}</p>
               )}
 
               {/* Color Swatches */}
@@ -481,9 +481,30 @@ const SingleProduct = ({ product }: IProductRootObject) => {
                   </div>
                 )}
 
+              {/* Selected Variant Info */}
+              {selectedVariation && (selectedColor || selectedSize) && (
+                <p className="text-sm text-gray-500 mb-2">
+                  {selectedColor && <span className="capitalize">{selectedColor}</span>}
+                  {selectedColor && selectedSize && ' / '}
+                  {selectedSize && <span className="uppercase">{selectedSize}</span>}
+                </p>
+              )}
+
+              {/* Price Display - positioned near add to cart */}
+              <div className="mb-4">
+                {isOnSale && displayRegularPrice ? (
+                  <div className="flex items-center gap-3">
+                    <p className="text-2xl font-bold text-red-600">{displayPrice}</p>
+                    <p className="text-lg text-gray-400 line-through">{displayRegularPrice}</p>
+                  </div>
+                ) : (
+                  <p className="text-2xl font-bold">{displayPrice}</p>
+                )}
+              </div>
+
               {/* Stock Status */}
               {selectedVariation && (
-                <div className="mb-6">
+                <div className="mb-4">
                   {isInStock ? (
                     <p className="text-sm text-green-600 font-medium">
                       {stockQuantity ? `${stockQuantity} in stock` : 'In stock'}

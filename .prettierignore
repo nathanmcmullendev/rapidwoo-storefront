@@ -1,0 +1,25 @@
+# Dependencies
+node_modules/
+
+# Build output
+.next/
+out/
+dist/
+
+# Coverage
+coverage/
+
+# IDE
+.idea/
+.vscode/
+
+# Misc
+*.min.js
+*.min.css
+package-lock.json
+pnpm-lock.yaml
+yarn.lock
+
+# Test reports
+playwright-report/
+test-results/

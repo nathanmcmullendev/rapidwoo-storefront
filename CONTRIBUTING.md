@@ -1,93 +1,264 @@
-# Contributing
+# Contributing to RapidWoo Storefront
 
-When contributing to this repository, please first discuss the change you wish to make via issue,
-email, or any other method with the owners of this repository before making a change. 
+Thank you for your interest in contributing! This document provides guidelines and instructions for contributing.
 
-Please note we have a code of conduct, please follow it in all your interactions with the project.
+## Table of Contents
 
-## Pull Request Process
-
-1.  Ensure any install or build dependencies are removed before the end of the layer when doing a 
-    build.
-2.  Update the README.md with details of changes to the interface, this includes new environment 
-    variables, exposed ports, useful file locations and container parameters.
-3.  Increase the version numbers in any examples files and the README.md to the new version that this
-    Pull Request would represent. The versioning scheme we use is [SemVer](http://semver.org/).
-4.  You may merge the Pull Request in once you have the sign-off of two other developers, or if you 
-    do not have permission to do that, you may request the second reviewer to merge it for you.
+- [Code of Conduct](#code-of-conduct)
+- [Getting Started](#getting-started)
+- [Development Workflow](#development-workflow)
+- [Commit Guidelines](#commit-guidelines)
+- [Pull Request Process](#pull-request-process)
+- [Code Style](#code-style)
+- [Testing](#testing)
 
 ## Code of Conduct
 
 ### Our Pledge
 
-In the interest of fostering an open and welcoming environment, we as
-contributors and maintainers pledge to making participation in our project and
-our community a harassment-free experience for everyone, regardless of age, body
-size, disability, ethnicity, gender identity and expression, level of experience,
-nationality, personal appearance, race, religion, or sexual identity and
-orientation.
+In the interest of fostering an open and welcoming environment, we as contributors and maintainers pledge to making participation in our project and our community a harassment-free experience for everyone, regardless of age, body size, disability, ethnicity, gender identity and expression, level of experience, nationality, personal appearance, race, religion, or sexual identity and orientation.
 
 ### Our Standards
 
-Examples of behavior that contributes to creating a positive environment
-include:
+Examples of behavior that contributes to creating a positive environment include:
 
--   Using welcoming and inclusive language
--   Being respectful of differing viewpoints and experiences
--   Gracefully accepting constructive criticism
--   Focusing on what is best for the community
--   Showing empathy towards other community members
+- Using welcoming and inclusive language
+- Being respectful of differing viewpoints and experiences
+- Gracefully accepting constructive criticism
+- Focusing on what is best for the community
+- Showing empathy towards other community members
 
 Examples of unacceptable behavior by participants include:
 
--   The use of sexualized language or imagery and unwelcome sexual attention or
-    advances
--   Trolling, insulting/derogatory comments, and personal or political attacks
--   Public or private harassment
--   Publishing others' private information, such as a physical or electronic
-    address, without explicit permission
--   Other conduct which could reasonably be considered inappropriate in a
-    professional setting
+- The use of sexualized language or imagery and unwelcome sexual attention or advances
+- Trolling, insulting/derogatory comments, and personal or political attacks
+- Public or private harassment
+- Publishing others' private information without explicit permission
+- Other conduct which could reasonably be considered inappropriate
 
-### Our Responsibilities
+## Getting Started
 
-Project maintainers are responsible for clarifying the standards of acceptable
-behavior and are expected to take appropriate and fair corrective action in
-response to any instances of unacceptable behavior.
+### Prerequisites
 
-Project maintainers have the right and responsibility to remove, edit, or
-reject comments, commits, code, wiki edits, issues, and other contributions
-that are not aligned to this Code of Conduct, or to ban temporarily or
-permanently any contributor for other behaviors that they deem inappropriate,
-threatening, offensive, or harmful.
+- Node.js 18.x or higher
+- npm 9.x or higher
+- Git
 
-### Scope
+### Setup
 
-This Code of Conduct applies both within project spaces and in public spaces
-when an individual is representing the project or its community. Examples of
-representing a project or community include using an official project e-mail
-address, posting via an official social media account, or acting as an appointed
-representative at an online or offline event. Representation of a project may be
-further defined and clarified by project maintainers.
+1. Fork the repository
+2. Clone your fork:
+   ```bash
+   git clone https://github.com/YOUR_USERNAME/rapidwoo-storefront.git
+   cd rapidwoo-storefront
+   ```
+3. Install dependencies:
+   ```bash
+   npm install
+   ```
+4. Set up Husky hooks:
+   ```bash
+   npm run prepare
+   ```
+5. Start the development server:
+   ```bash
+   npm run dev
+   ```
 
-### Enforcement
+## Development Workflow
 
-Instances of abusive, harassing, or otherwise unacceptable behavior may be
-reported by contacting the project team at [INSERT EMAIL ADDRESS]. All
-complaints will be reviewed and investigated and will result in a response that
-is deemed necessary and appropriate to the circumstances. The project team is
-obligated to maintain confidentiality with regard to the reporter of an incident.
-Further details of specific enforcement policies may be posted separately.
+### Branch Naming
 
-Project maintainers who do not follow or enforce the Code of Conduct in good
-faith may face temporary or permanent repercussions as determined by other
-members of the project's leadership.
+Use descriptive branch names following this pattern:
 
-### Attribution
+- `feat/description` - New features
+- `fix/description` - Bug fixes
+- `docs/description` - Documentation changes
+- `refactor/description` - Code refactoring
+- `test/description` - Test additions or fixes
+- `chore/description` - Maintenance tasks
 
-This Code of Conduct is adapted from the [Contributor Covenant][homepage], version 1.4,
-available at [http://contributor-covenant.org/version/1/4][version]
+Example: `feat/add-wishlist-functionality`
 
-[homepage]: http://contributor-covenant.org
+### Available Scripts
 
-[version]: http://contributor-covenant.org/version/1/4/
+| Command | Description |
+|---------|-------------|
+| `npm run dev` | Start development server |
+| `npm run build` | Build for production |
+| `npm run lint` | Run ESLint |
+| `npm run lint:fix` | Fix ESLint errors |
+| `npm run type-check` | Run TypeScript type checking |
+| `npm run format` | Format code with Prettier |
+| `npm run format:check` | Check code formatting |
+| `npm run test` | Run unit tests |
+| `npm run test:ci` | Run tests with coverage |
+| `npm run test:e2e` | Run E2E tests |
+| `npm run validate` | Run all checks (lint, type-check, test) |
+
+## Commit Guidelines
+
+We use [Conventional Commits](https://www.conventionalcommits.org/). All commits must follow this format:
+
+```
+type(scope): description
+
+[optional body]
+
+[optional footer]
+```
+
+### Types
+
+| Type | Description |
+|------|-------------|
+| `feat` | New feature |
+| `fix` | Bug fix |
+| `docs` | Documentation changes |
+| `style` | Formatting, missing semicolons, etc. |
+| `refactor` | Code change that neither fixes a bug nor adds a feature |
+| `perf` | Performance improvement |
+| `test` | Adding or updating tests |
+| `chore` | Maintenance tasks |
+| `ci` | CI/CD changes |
+| `build` | Build system changes |
+| `revert` | Revert a previous commit |
+
+### Examples
+
+```bash
+feat(cart): add quantity selector to cart items
+fix(checkout): resolve payment processing error
+docs(readme): update installation instructions
+refactor(components): extract shared button logic
+test(cart): add unit tests for cart store
+```
+
+## Pull Request Process
+
+1. **Update your fork** with the latest from main:
+   ```bash
+   git fetch upstream
+   git rebase upstream/main
+   ```
+
+2. **Create a feature branch**:
+   ```bash
+   git checkout -b feat/your-feature-name
+   ```
+
+3. **Make your changes** following our code style guidelines
+
+4. **Run all checks** before committing:
+   ```bash
+   npm run validate
+   ```
+
+5. **Commit your changes** using conventional commits
+
+6. **Push to your fork**:
+   ```bash
+   git push origin feat/your-feature-name
+   ```
+
+7. **Open a Pull Request** using our PR template
+
+8. **Respond to feedback** and make necessary changes
+
+### PR Requirements
+
+- [ ] All CI checks pass
+- [ ] Code follows style guidelines
+- [ ] Tests are included for new functionality
+- [ ] Documentation is updated if needed
+- [ ] PR description explains the changes
+- [ ] Linked to relevant issue(s)
+
+## Code Style
+
+### TypeScript
+
+- Use TypeScript for all new code
+- Define proper types (avoid `any`)
+- Use interfaces for object shapes
+- Export types that may be reused
+
+### React Components
+
+- Use functional components with hooks
+- Keep components small and focused
+- Extract reusable logic into custom hooks
+- Use meaningful prop names
+
+### File Structure
+
+```
+src/
+├── components/       # React components
+│   ├── Component/
+│   │   ├── Component.component.tsx
+│   │   ├── Component.test.tsx
+│   │   └── index.ts
+├── hooks/            # Custom React hooks
+├── stores/           # Zustand stores
+├── utils/            # Utility functions
+├── types/            # TypeScript types
+└── pages/            # Next.js pages
+```
+
+### Naming Conventions
+
+- **Components**: PascalCase (e.g., `ProductCard.component.tsx`)
+- **Hooks**: camelCase with `use` prefix (e.g., `useCart.ts`)
+- **Utilities**: camelCase (e.g., `formatPrice.ts`)
+- **Constants**: SCREAMING_SNAKE_CASE (e.g., `MAX_ITEMS`)
+- **Types/Interfaces**: PascalCase with `I` prefix for interfaces
+
+## Testing
+
+### Unit Tests
+
+Write unit tests for:
+- Utility functions
+- Custom hooks
+- Store logic
+- Component behavior
+
+```bash
+# Run all tests
+npm run test
+
+# Run tests in watch mode
+npm run test -- --watch
+
+# Run with coverage
+npm run test:ci
+```
+
+### E2E Tests
+
+Write E2E tests for:
+- Critical user flows
+- Checkout process
+- Navigation
+
+```bash
+# Run E2E tests
+npm run test:e2e
+
+# Run with UI
+npm run test:e2e:ui
+```
+
+### Test File Naming
+
+- Unit tests: `*.test.tsx` or `*.test.ts`
+- E2E tests: `*.spec.ts` (in `/e2e` directory)
+
+## Questions?
+
+If you have questions, please open an issue with the `question` label.
+
+---
+
+Thank you for contributing! 🎉

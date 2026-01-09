@@ -253,56 +253,13 @@ const SingleProduct = ({ product }: IProductRootObject) => {
       return;
     }
 
-    // Try to get defaults from WooCommerce defaultAttributes
-    const defaultAttrs = product.defaultAttributes?.nodes;
-    let defaultColor: string | null = null;
-    let defaultSize: string | null = null;
+    // Don't auto-select defaults - match WooCommerce behavior
+    // User must select both color AND size before Add to Cart is enabled
+    setSelectedColor(null);
+    setSelectedSize(null);
 
-    if (defaultAttrs?.length) {
-      defaultAttrs.forEach((attr: IDefaultAttribute) => {
-        const attrName = attr.name.toLowerCase().replace('pa_', '');
-        if (attrName === 'color' && availableColors.includes(attr.value)) {
-          defaultColor = attr.value;
-        } else if (attrName === 'size' && availableSizes.includes(attr.value)) {
-          defaultSize = attr.value;
-        }
-      });
-    }
-
-    // Fallback: find variant matching product's main image
-    if (!defaultColor && hasColorAttribute) {
-      const productImageUrl = product.image?.sourceUrl;
-      if (productImageUrl) {
-        const imageMatchVariant = product.variations.nodes.find(
-          (v) => v.image?.sourceUrl === productImageUrl,
-        );
-        if (imageMatchVariant?.attributes?.nodes) {
-          const colorAttr = imageMatchVariant.attributes.nodes.find(
-            (a) => a.name.toLowerCase().replace('pa_', '') === 'color',
-          );
-          if (colorAttr) defaultColor = colorAttr.value;
-        }
-      }
-    }
-
-    // Ultimate fallback: first available option
-    if (!defaultColor && hasColorAttribute) {
-      defaultColor = availableColors[0];
-    }
-    if (!defaultSize && hasSizeAttribute) {
-      defaultSize = availableSizes[0];
-    }
-
-    setSelectedColor(defaultColor);
-    setSelectedSize(defaultSize);
-
-    // Set initial image
-    const initialVariant = findVariationByAttributes(defaultColor, defaultSize);
-    if (initialVariant?.image?.sourceUrl) {
-      setCurrentImage(initialVariant.image.sourceUrl);
-    } else {
-      setCurrentImage(product.image?.sourceUrl || placeholderFallBack);
-    }
+    // Set initial image to product's main image
+    setCurrentImage(product.image?.sourceUrl || placeholderFallBack);
   }, [product, availableColors, availableSizes, hasColorAttribute, hasSizeAttribute]);
 
   // Update image when selection changes
@@ -323,15 +280,45 @@ const SingleProduct = ({ product }: IProductRootObject) => {
     }
   }, [selectedVariation, selectedColor, selectedSize, product.variations]);
 
-  // Handle color swatch click
+  // Handle color swatch click (toggle on re-click)
   const handleColorSelect = (color: string) => {
-    setSelectedColor(color);
+    if (selectedColor?.toLowerCase() === color.toLowerCase()) {
+      setSelectedColor(null); // Deselect if clicking same color
+    } else {
+      setSelectedColor(color);
+    }
   };
 
-  // Handle size pill click
+  // Handle size pill click (toggle on re-click)
   const handleSizeSelect = (size: string) => {
-    setSelectedSize(size);
+    if (selectedSize?.toLowerCase() === size.toLowerCase()) {
+      setSelectedSize(null); // Deselect if clicking same size
+    } else {
+      setSelectedSize(size);
+    }
   };
+
+  // Clear all selections
+  const handleClearSelection = () => {
+    setSelectedColor(null);
+    setSelectedSize(null);
+    setCurrentImage(product.image?.sourceUrl || placeholderFallBack);
+  };
+
+  // Check if selection is complete (both color AND size when both exist)
+  const isSelectionComplete = useMemo(() => {
+    if (hasColorAttribute && hasSizeAttribute) {
+      return !!selectedColor && !!selectedSize;
+    } else if (hasColorAttribute) {
+      return !!selectedColor;
+    } else if (hasSizeAttribute) {
+      return !!selectedSize;
+    }
+    return true; // No attributes to select
+  }, [hasColorAttribute, hasSizeAttribute, selectedColor, selectedSize]);
+
+  // Check if any selection has been made
+  const hasAnySelection = !!selectedColor || !!selectedSize;
 
   // Legacy dropdown handler (for products without color/size attributes)
   const handleVariationChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
@@ -342,25 +329,28 @@ const SingleProduct = ({ product }: IProductRootObject) => {
     }
   };
 
-  // Get display values
+  // Get display values - show range until fully selected
   const displayPrice = useMemo(() => {
-    if (selectedVariation) {
+    // Only show specific price when selection is complete
+    if (isSelectionComplete && selectedVariation) {
       const price = selectedVariation.onSale
         ? selectedVariation.salePrice
         : selectedVariation.regularPrice;
       return price ? paddedPrice(price, '$') : '';
     }
+    // Show price range when not fully selected
     return product.price ? paddedPrice(product.price, '$') : '';
-  }, [selectedVariation, product.price]);
+  }, [isSelectionComplete, selectedVariation, product.price]);
 
   const displayRegularPrice = useMemo(() => {
-    if (selectedVariation) {
+    if (isSelectionComplete && selectedVariation) {
       return selectedVariation.regularPrice ? paddedPrice(selectedVariation.regularPrice, '$') : '';
     }
     return product.regularPrice ? paddedPrice(product.regularPrice, '$') : '';
-  }, [selectedVariation, product.regularPrice]);
+  }, [isSelectionComplete, selectedVariation, product.regularPrice]);
 
-  const isOnSale = selectedVariation ? selectedVariation.onSale : product.onSale;
+  const isOnSale =
+    isSelectionComplete && selectedVariation ? selectedVariation.onSale : product.onSale;
   const stockQuantity = selectedVariation ? selectedVariation.stockQuantity : product.stockQuantity;
   const isInStock =
     selectedVariation?.stockStatus === 'IN_STOCK' || (stockQuantity && stockQuantity > 0);
@@ -490,6 +480,18 @@ const SingleProduct = ({ product }: IProductRootObject) => {
                 </div>
               )}
 
+              {/* Clear Button - shows when any selection is made */}
+              {hasAnySelection && (
+                <div className="mb-4">
+                  <button
+                    onClick={handleClearSelection}
+                    className="text-sm text-gray-500 hover:text-gray-700 underline transition-colors"
+                  >
+                    Clear selection
+                  </button>
+                </div>
+              )}
+
               {/* Legacy dropdown for products without color/size */}
               {!hasMultipleAttributes &&
                 product.variations &&
@@ -526,8 +528,8 @@ const SingleProduct = ({ product }: IProductRootObject) => {
                   </div>
                 )}
 
-              {/* Selected Variant Info */}
-              {selectedVariation && (selectedColor || selectedSize) && (
+              {/* Selected Variant Info - only show when fully selected */}
+              {isSelectionComplete && selectedVariation && (selectedColor || selectedSize) && (
                 <p className="text-sm text-gray-500 mb-2">
                   {selectedColor && <span className="capitalize">{selectedColor}</span>}
                   {selectedColor && selectedSize && ' / '}
@@ -535,9 +537,9 @@ const SingleProduct = ({ product }: IProductRootObject) => {
                 </p>
               )}
 
-              {/* Price Display - positioned near add to cart */}
+              {/* Price Display */}
               <div className="mb-4">
-                {isOnSale && displayRegularPrice ? (
+                {isOnSale && displayRegularPrice && isSelectionComplete ? (
                   <div className="flex items-center gap-3">
                     <p className="text-2xl font-bold text-red-600">{displayPrice}</p>
                     <p className="text-lg text-gray-400 line-through">{displayRegularPrice}</p>
@@ -547,8 +549,8 @@ const SingleProduct = ({ product }: IProductRootObject) => {
                 )}
               </div>
 
-              {/* Stock Status */}
-              {selectedVariation && (
+              {/* Stock Status - only show when fully selected */}
+              {isSelectionComplete && selectedVariation && (
                 <div className="mb-4">
                   {isInStock ? (
                     <p className="text-sm text-green-600 font-medium">
@@ -560,14 +562,34 @@ const SingleProduct = ({ product }: IProductRootObject) => {
                 </div>
               )}
 
+              {/* Selection prompt when not complete */}
+              {!isSelectionComplete && hasMultipleAttributes && (
+                <p className="text-sm text-amber-600 mb-4">
+                  Please select {!selectedColor && hasColorAttribute ? 'color' : ''}
+                  {!selectedColor && hasColorAttribute && !selectedSize && hasSizeAttribute
+                    ? ' and '
+                    : ''}
+                  {!selectedSize && hasSizeAttribute ? 'size' : ''}
+                </p>
+              )}
+
               {/* Add to Cart Button */}
               <div className="w-full max-w-xs">
                 {product.variations ? (
-                  <AddToCart
-                    product={product}
-                    variationId={selectedVariation?.databaseId}
-                    fullWidth={true}
-                  />
+                  isSelectionComplete ? (
+                    <AddToCart
+                      product={product}
+                      variationId={selectedVariation?.databaseId}
+                      fullWidth={true}
+                    />
+                  ) : (
+                    <button
+                      disabled
+                      className="w-full py-3 px-6 bg-gray-300 text-gray-500 font-semibold rounded-lg cursor-not-allowed"
+                    >
+                      SELECT OPTIONS
+                    </button>
+                  )
                 ) : (
                   <AddToCart product={product} fullWidth={true} />
                 )}

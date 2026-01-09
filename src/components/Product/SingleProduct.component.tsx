@@ -107,12 +107,31 @@ const SingleProduct = ({ product }: IProductRootObject) => {
   const hasSizeAttribute = availableSizes.length > 0;
   const hasMultipleAttributes = hasColorAttribute || hasSizeAttribute;
 
+  // Check if attributes are used in variations (must be defined before findVariationByAttributes)
+  const checkColorInVariations = (): boolean => {
+    if (!product.variations?.nodes) return false;
+    return product.variations.nodes.some((variant) =>
+      variant.attributes?.nodes.some((a) => a.name.toLowerCase().replace('pa_', '') === 'color'),
+    );
+  };
+
+  const checkSizeInVariations = (): boolean => {
+    if (!product.variations?.nodes) return false;
+    return product.variations.nodes.some((variant) =>
+      variant.attributes?.nodes.some((a) => a.name.toLowerCase().replace('pa_', '') === 'size'),
+    );
+  };
+
   // Find variation matching selected attributes
+  // Only matches attributes that actually exist on variations
   const findVariationByAttributes = (
     color: string | null,
     size: string | null,
   ): IVariationNodes | null => {
     if (!product.variations?.nodes) return null;
+
+    const colorUsed = checkColorInVariations();
+    const sizeUsed = checkSizeInVariations();
 
     return (
       product.variations.nodes.find((variant) => {
@@ -125,28 +144,54 @@ const SingleProduct = ({ product }: IProductRootObject) => {
           (attr) => attr.name.toLowerCase().replace('pa_', '') === 'size',
         )?.value;
 
-        // Match based on what attributes exist
-        if (color && size) {
-          return (
-            variantColor?.toLowerCase() === color.toLowerCase() &&
-            variantSize?.toLowerCase() === size.toLowerCase()
-          );
-        } else if (color) {
-          return variantColor?.toLowerCase() === color.toLowerCase();
-        } else if (size) {
-          return variantSize?.toLowerCase() === size.toLowerCase();
+        // Only match attributes that are actually used in variations
+        let colorMatch = true;
+        let sizeMatch = true;
+
+        if (colorUsed && color) {
+          colorMatch = variantColor?.toLowerCase() === color.toLowerCase();
+        }
+        if (sizeUsed && size) {
+          sizeMatch = variantSize?.toLowerCase() === size.toLowerCase();
+        }
+
+        // If both are used, both must match. If only one is used, only that one must match.
+        if (colorUsed && sizeUsed) {
+          return colorMatch && sizeMatch;
+        } else if (colorUsed) {
+          return colorMatch;
+        } else if (sizeUsed) {
+          return sizeMatch;
         }
         return false;
       }) || null
     );
   };
 
+  // Check if an attribute type is used in variations (vs just product-level)
+  const isAttributeInVariations = (attrType: 'color' | 'size'): boolean => {
+    if (!product.variations?.nodes) return false;
+    return product.variations.nodes.some((variant) =>
+      variant.attributes?.nodes.some((a) => a.name.toLowerCase().replace('pa_', '') === attrType),
+    );
+  };
+
+  const colorInVariations = isAttributeInVariations('color');
+  const sizeInVariations = isAttributeInVariations('size');
+
   // Check if a specific color/size combination is in stock
   const isAttributeInStock = (
     attrType: 'color' | 'size',
     value: string,
   ): { inStock: boolean; quantity: number } => {
-    if (!product.variations?.nodes) return { inStock: false, quantity: 0 };
+    if (!product.variations?.nodes) return { inStock: true, quantity: 0 };
+
+    // If this attribute type isn't used in variations, it's just informational
+    // (product-level attribute) - always show as available
+    const attrUsedInVariations = attrType === 'color' ? colorInVariations : sizeInVariations;
+    if (!attrUsedInVariations) {
+      return { inStock: true, quantity: 0 };
+    }
 
     // Find all variants with this attribute value
     const matchingVariants = product.variations.nodes.filter((variant) => {
@@ -186,8 +231,8 @@ const SingleProduct = ({ product }: IProductRootObject) => {
     if (product.variations?.nodes?.length) {
       console.log('=== PRODUCT VARIATIONS DEBUG ===');
       console.log('Product:', product.name);
-      console.log('Available Colors:', availableColors);
-      console.log('Available Sizes:', availableSizes);
+      console.log('Available Colors:', availableColors, '| In variations:', colorInVariations);
+      console.log('Available Sizes:', availableSizes, '| In variations:', sizeInVariations);
       console.log('Variations:');
       product.variations.nodes.forEach((v) => {
         const colorAttr = v.attributes?.nodes.find(

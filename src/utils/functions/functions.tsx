@@ -11,7 +11,6 @@ interface RootObject {
 }
 
 import { ChangeEvent } from 'react';
-import { IVariationNodes } from '@/components/Product/AddToCart.component';
 
 /* Interface for products*/
 
@@ -50,11 +49,28 @@ interface IProduct {
   node: IProductNode;
 }
 
+interface ICartVariationNode {
+  id: string;
+  databaseId: number;
+  name: string;
+  description?: string;
+  type?: string;
+  onSale?: boolean;
+  price?: string;
+  regularPrice?: string;
+  salePrice?: string;
+  image?: IImage;
+}
+
+interface ICartVariation {
+  node: ICartVariationNode;
+}
+
 export interface IProductRootObject {
   __typename: string;
   key: string;
   product: IProduct;
-  variation?: IVariationNodes;
+  variation?: ICartVariation;
   quantity: number;
   total: string;
   subtotal: string;
@@ -178,10 +194,7 @@ export const getFormattedCart = (data: IFormattedCartProps) => {
     const givenProduct = givenProducts[Number(i)].product.node;
 
     // Convert price to a float value
-    const convertedCurrency = givenProducts[Number(i)].total.replace(
-      /[^0-9.-]+/g,
-      '',
-    );
+    const convertedCurrency = givenProducts[Number(i)].total.replace(/[^0-9.-]+/g, '');
 
     product.productId = givenProduct.productId;
     product.cartKey = givenProducts[Number(i)].key;

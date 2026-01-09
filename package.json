@@ -16,7 +16,7 @@
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
     "validate": "npm run lint && npm run type-check && npm run test:ci",
-    "prepare": "husky install",
+    "prepare": "husky",
     "lhci": "lhci autorun",
     "lhci:perf": "lhci autorun --collect.settings.preset=perf",
     "lhci:desktop": "lhci autorun --collect.settings.preset=desktop",
@@ -84,11 +84,10 @@
   },
   "lint-staged": {
     "*.{js,ts,tsx}": [
-      "eslint --fix",
-      "prettier --write"
+      "npx prettier --write"
     ],
     "*.{json,md,yml,yaml}": [
-      "prettier --write"
+      "npx prettier --write"
     ]
   }
 }

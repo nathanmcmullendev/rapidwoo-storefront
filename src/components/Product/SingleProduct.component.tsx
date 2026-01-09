@@ -123,7 +123,7 @@ const SingleProduct = ({ product }: IProductRootObject) => {
   };
 
   // Find variation matching selected attributes
-  // Only matches attributes that actually exist on variations
+  // Handles "Any" values (empty string) which match any selection
   const findVariationByAttributes = (
     color: string | null,
     size: string | null,
@@ -144,23 +144,26 @@ const SingleProduct = ({ product }: IProductRootObject) => {
           (attr) => attr.name.toLowerCase().replace('pa_', '') === 'size',
         )?.value;
 
-        // Only match attributes that are actually used in variations
+        // Check color match - empty string means "Any Color"
         let colorMatch = true;
+        if (color) {
+          // Empty variantColor means "Any Color" - matches everything
+          colorMatch = variantColor === '' || variantColor?.toLowerCase() === color.toLowerCase();
+        }
+
+        // Check size match - empty string means "Any Size"
         let sizeMatch = true;
-
-        if (colorUsed && color) {
-          colorMatch = variantColor?.toLowerCase() === color.toLowerCase();
-        }
-        if (sizeUsed && size) {
-          sizeMatch = variantSize?.toLowerCase() === size.toLowerCase();
+        if (size) {
+          // Empty variantSize means "Any Size" - matches everything
+          sizeMatch = variantSize === '' || variantSize?.toLowerCase() === size.toLowerCase();
         }
 
-        // If both are used, both must match. If only one is used, only that one must match.
-        if (colorUsed && sizeUsed) {
+        // Match based on what's selected
+        if (color && size) {
           return colorMatch && sizeMatch;
-        } else if (colorUsed) {
+        } else if (color) {
           return colorMatch;
-        } else if (sizeUsed) {
+        } else if (size) {
           return sizeMatch;
         }
         return false;
@@ -168,11 +171,14 @@ const SingleProduct = ({ product }: IProductRootObject) => {
     );
   };
 
-  // Check if an attribute type is used in variations (vs just product-level)
+  // Check if an attribute type has NON-EMPTY values in variations
+  // Empty string means "Any" (e.g., "Any Size" applies to all sizes)
   const isAttributeInVariations = (attrType: 'color' | 'size'): boolean => {
     if (!product.variations?.nodes) return false;
     return product.variations.nodes.some((variant) =>
-      variant.attributes?.nodes.some((a) => a.name.toLowerCase().replace('pa_', '') === attrType),
+      variant.attributes?.nodes.some(
+        (a) => a.name.toLowerCase().replace('pa_', '') === attrType && a.value !== '',
+      ),
     );
   };
 

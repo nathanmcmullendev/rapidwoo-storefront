@@ -19,30 +19,30 @@ const SingleProduct = ({ product }: IProductRootObject) => {
 
   const placeholderFallBack = 'https://via.placeholder.com/600';
 
-  // Find the currently selected variation
-  const selectedVariation = useMemo(() => {
-    if (!product.variations || !selectedVariationId) return null;
-    return (
-      product.variations.nodes.find((v: IVariationNodes) => v.databaseId === selectedVariationId) ||
-      null
-    );
-  }, [product.variations, selectedVariationId]);
-
-  // Initialize image with product image
-  useEffect(() => {
-    setCurrentImage(product.image?.sourceUrl || placeholderFallBack);
-  }, [product.image]);
-
   // Helper function to find variant matching default attributes
-  const findDefaultVariant = (): IVariationNodes | null => {
+  const findDefaultVariant = useMemo((): IVariationNodes | null => {
     if (!product.variations || product.variations.nodes.length === 0) {
       return null;
     }
 
     const defaultAttrs = product.defaultAttributes?.nodes;
 
+    // Debug: log what we're getting from the API
+    if (typeof window !== 'undefined') {
+      console.log('Default attributes from WooCommerce:', defaultAttrs);
+      console.log(
+        'Variations:',
+        product.variations.nodes.map((v) => ({
+          name: v.name,
+          id: v.databaseId,
+          attributes: v.attributes?.nodes,
+        })),
+      );
+    }
+
     // If no default attributes set, return first variant
     if (!defaultAttrs || defaultAttrs.length === 0) {
+      console.log('No default attributes, using first variant');
       return product.variations.nodes[0];
     }
 
@@ -52,42 +52,71 @@ const SingleProduct = ({ product }: IProductRootObject) => {
 
       // Check if all default attributes match this variant's attributes
       return defaultAttrs.every((defaultAttr: IDefaultAttribute) => {
-        const variantAttr = variant.attributes?.nodes.find(
-          (attr) => attr.name.toLowerCase() === defaultAttr.name.toLowerCase(),
+        // Try matching by name (could be "Color" or "pa_color" format)
+        const variantAttr = variant.attributes?.nodes.find((attr) => {
+          const attrName = attr.name.toLowerCase().replace('pa_', '');
+          const defaultName = defaultAttr.name.toLowerCase().replace('pa_', '');
+          return attrName === defaultName;
+        });
+
+        if (!variantAttr) return false;
+
+        const matches = variantAttr.value.toLowerCase() === defaultAttr.value.toLowerCase();
+        console.log(
+          `Comparing: variant ${variantAttr.value} vs default ${defaultAttr.value} = ${matches}`,
         );
-        return variantAttr && variantAttr.value.toLowerCase() === defaultAttr.value.toLowerCase();
+        return matches;
       });
     });
 
-    // Return matching variant or fall back to first variant
+    console.log('Matching variant found:', matchingVariant?.name || 'none, using first');
     return matchingVariant || product.variations.nodes[0];
-  };
-
-  // Set default variation on mount (using WooCommerce default attributes)
-  useEffect(() => {
-    setIsLoading(false);
-    if (product.variations && product.variations.nodes.length > 0) {
-      const defaultVariant = findDefaultVariant();
-      if (defaultVariant) {
-        setSelectedVariationId(defaultVariant.databaseId);
-      }
-    }
   }, [product.variations, product.defaultAttributes]);
 
-  // Update image when variant selection changes
+  // Find the currently selected variation
+  const selectedVariation = useMemo(() => {
+    if (!product.variations || !selectedVariationId) return null;
+    return (
+      product.variations.nodes.find((v: IVariationNodes) => v.databaseId === selectedVariationId) ||
+      null
+    );
+  }, [product.variations, selectedVariationId]);
+
+  // Initialize default variant and image on mount - single effect to avoid race conditions
   useEffect(() => {
-    if (selectedVariationId && product.variations) {
-      const variant = product.variations.nodes.find(
-        (v: IVariationNodes) => v.databaseId === selectedVariationId,
-      );
-      if (variant?.image?.sourceUrl) {
-        setCurrentImage(variant.image.sourceUrl);
+    setIsLoading(false);
+
+    if (product.variations && product.variations.nodes.length > 0 && findDefaultVariant) {
+      // Set the default variant
+      setSelectedVariationId(findDefaultVariant.databaseId);
+
+      // Set the image from the default variant (or product image as fallback)
+      if (findDefaultVariant.image?.sourceUrl) {
+        setCurrentImage(findDefaultVariant.image.sourceUrl);
       } else {
-        // Fall back to product image if variant has no image
         setCurrentImage(product.image?.sourceUrl || placeholderFallBack);
       }
+    } else {
+      // No variations, use product image
+      setCurrentImage(product.image?.sourceUrl || placeholderFallBack);
     }
-  }, [selectedVariationId, product.variations, product.image]);
+  }, [product.variations, product.defaultAttributes, product.image, findDefaultVariant]);
+
+  // Update image when user manually changes variant selection
+  const handleVariationChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const newVariationId = Number(e.target.value);
+    setSelectedVariationId(newVariationId);
+
+    // Update image immediately
+    const variant = product.variations?.nodes.find(
+      (v: IVariationNodes) => v.databaseId === newVariationId,
+    );
+    if (variant?.image?.sourceUrl) {
+      setCurrentImage(variant.image.sourceUrl);
+    } else {
+      setCurrentImage(product.image?.sourceUrl || placeholderFallBack);
+    }
+  };
 
   // Get display values - use variant data if selected, otherwise product data
   const displayPrice = useMemo(() => {
@@ -119,11 +148,6 @@ const SingleProduct = ({ product }: IProductRootObject) => {
     descriptionText =
       new DOMParser().parseFromString(product.description, 'text/html').body.textContent || '';
   }
-
-  const handleVariationChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const newVariationId = Number(e.target.value);
-    setSelectedVariationId(newVariationId);
-  };
 
   return (
     <section className="bg-white mb-[8rem] md:mb-12">

@@ -151,17 +151,22 @@ const AddToCart = ({ product, variationId, fullWidth = false }: IProductRootObje
       input: productQueryInput,
     },
 
-    onCompleted: () => {
+    onCompleted: (data) => {
+      console.log('[AddToCart] Success:', data);
       // Update the cart with new values in React context.
       refetch();
     },
 
-    onError: () => {
+    onError: (error) => {
+      console.error('[AddToCart] Error:', error.message);
+      console.error('[AddToCart] GraphQL Errors:', error.graphQLErrors);
+      console.error('[AddToCart] Input was:', productQueryInput);
       setRequestError(true);
     },
   });
 
   const handleAddToCart = () => {
+    console.log('[AddToCart] Adding to cart with input:', productQueryInput);
     addToCart();
     // Refetch cart after 2 seconds
     setTimeout(() => {

@@ -102,7 +102,7 @@ const ProductList = ({ products, title }: ProductListProps) => {
               onSale={product.onSale}
               slug={product.slug}
               image={product.image}
-              preloaded={index < 6}
+              preloaded={index < 4}
             />
           ))}
         </div>

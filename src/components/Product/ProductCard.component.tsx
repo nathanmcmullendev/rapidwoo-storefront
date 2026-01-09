@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { paddedPrice } from '@/utils/functions/functions';
-import { getOptimizedImageUrl, getImageSrcSet, DEFAULT_SIZES } from '@/utils/images';
+import { getOptimizedImageUrl, getCardSrcSet, CARD_SIZES } from '@/utils/images';
 
 interface ProductCardProps {
   databaseId: number;
@@ -27,14 +27,13 @@ const ProductCard = ({
   image,
   preloaded = false,
 }: ProductCardProps) => {
-  // Add padding/empty character after currency symbol
   const formattedPrice = price ? paddedPrice(price, '$') : price;
   const formattedRegularPrice = regularPrice ? paddedPrice(regularPrice, '$') : regularPrice;
   const formattedSalePrice = salePrice ? paddedPrice(salePrice, '$') : salePrice;
 
-  // Generate optimized Cloudinary URLs
+  // Generate optimized Cloudinary URLs - using smaller card-specific srcSet
   const imageUrl = getOptimizedImageUrl(image?.sourceUrl, 'grid');
-  const srcSet = getImageSrcSet(image?.sourceUrl);
+  const srcSet = getCardSrcSet(image?.sourceUrl);
 
   return (
     <div className="group">
@@ -44,10 +43,10 @@ const ProductCard = ({
             <img
               src={imageUrl}
               alt={name}
-              width={400}
-              height={533}
+              width={300}
+              height={400}
               srcSet={srcSet || undefined}
-              sizes={srcSet ? DEFAULT_SIZES : undefined}
+              sizes={srcSet ? CARD_SIZES : undefined}
               className="w-full h-full object-cover object-center transition duration-300 group-hover:scale-105"
               loading={preloaded ? 'eager' : 'lazy'}
               fetchPriority={preloaded ? 'high' : 'auto'}
@@ -62,20 +61,24 @@ const ProductCard = ({
       </div>
 
       <Link href={`/product/${slug}`}>
-        <div className="mt-4">
-          <p className="text-xl font-bold text-center cursor-pointer hover:text-gray-600 transition-colors">
+        <div className="mt-2">
+          <p className="text-sm md:text-base font-medium text-center cursor-pointer hover:text-gray-600 transition-colors line-clamp-2">
             {name}
           </p>
         </div>
       </Link>
-      <div className="mt-2 text-center">
+      <div className="mt-1 text-center">
         {onSale ? (
-          <div className="flex items-center justify-center gap-2">
-            <span className="text-xl font-bold text-red-600">{formattedSalePrice}</span>
-            <span className="text-lg text-gray-500 line-through">{formattedRegularPrice}</span>
+          <div className="flex items-center justify-center gap-1">
+            <span className="text-sm md:text-base font-bold text-red-600">
+              {formattedSalePrice}
+            </span>
+            <span className="text-xs md:text-sm text-gray-500 line-through">
+              {formattedRegularPrice}
+            </span>
           </div>
         ) : (
-          <span className="text-lg text-gray-900">{formattedPrice}</span>
+          <span className="text-sm md:text-base text-gray-900">{formattedPrice}</span>
         )}
       </div>
     </div>

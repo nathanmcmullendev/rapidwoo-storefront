@@ -36,11 +36,11 @@ const CheckoutFormWithStripe = () => {
   const methods = useForm<ICheckoutDataProps>();
 
   // Get cart data query
-  const { data, refetch } = useQuery(GET_CART, {
+  const { refetch } = useQuery(GET_CART, {
     notifyOnNetworkStatusChange: true,
-    onCompleted: () => {
-      const updatedCart = getFormattedCart(data);
-      if (!updatedCart && !data?.cart?.contents?.nodes?.length) {
+    onCompleted: (completedData) => {
+      const updatedCart = getFormattedCart(completedData);
+      if (!updatedCart && !completedData?.cart?.contents?.nodes?.length) {
         clearWooCommerceSession();
         return;
       }
@@ -51,23 +51,20 @@ const CheckoutFormWithStripe = () => {
   });
 
   // Checkout GraphQL mutation
-  const [checkout, { loading: checkoutLoading }] = useMutation(
-    CHECKOUT_MUTATION,
-    {
-      onCompleted: () => {
-        clearWooCommerceSession();
-        setOrderCompleted(true);
-        refetch();
-      },
-      onError: (error) => {
-        console.error('Checkout mutation error:', error);
-        console.error('GraphQL errors:', error.graphQLErrors);
-        console.error('Network error:', error.networkError);
-        setRequestError(error);
-        refetch();
-      },
+  const [checkout, { loading: checkoutLoading }] = useMutation(CHECKOUT_MUTATION, {
+    onCompleted: () => {
+      clearWooCommerceSession();
+      setOrderCompleted(true);
+      refetch();
     },
-  );
+    onError: (error) => {
+      console.error('Checkout mutation error:', error);
+      console.error('GraphQL errors:', error.graphQLErrors);
+      console.error('Network error:', error.networkError);
+      setRequestError(error);
+      refetch();
+    },
+  });
 
   useEffect(() => {
     refetch();
@@ -115,9 +112,7 @@ const CheckoutFormWithStripe = () => {
     if (!billingData) return;
 
     // Log session info for debugging
-    const sessionData = typeof window !== 'undefined'
-      ? localStorage.getItem('woo-session')
-      : null;
+    const sessionData = typeof window !== 'undefined' ? localStorage.getItem('woo-session') : null;
     console.log('Session data before checkout:', sessionData);
 
     // Create WooCommerce order with Stripe payment info
@@ -182,8 +177,18 @@ const CheckoutFormWithStripe = () => {
                 <p className="text-sm text-gray-500">Pay securely with Stripe</p>
               </div>
               <div className="ml-auto flex gap-2">
-                <img src="/visa.svg" alt="Visa" className="h-6" onError={(e) => e.currentTarget.style.display = 'none'} />
-                <img src="/mastercard.svg" alt="Mastercard" className="h-6" onError={(e) => e.currentTarget.style.display = 'none'} />
+                <img
+                  src="/visa.svg"
+                  alt="Visa"
+                  className="h-6"
+                  onError={(e) => (e.currentTarget.style.display = 'none')}
+                />
+                <img
+                  src="/mastercard.svg"
+                  alt="Mastercard"
+                  className="h-6"
+                  onError={(e) => (e.currentTarget.style.display = 'none')}
+                />
               </div>
             </label>
 
@@ -319,9 +324,7 @@ const CheckoutFormWithStripe = () => {
         <>
           {!cart && !orderCompleted && (
             <div className="text-center py-16">
-              <h1 className="text-2xl font-bold text-gray-800 mb-4">
-                Your cart is empty
-              </h1>
+              <h1 className="text-2xl font-bold text-gray-800 mb-4">Your cart is empty</h1>
               <p className="text-gray-600 mb-6">
                 Add some products to your cart before checking out.
               </p>
@@ -336,20 +339,27 @@ const CheckoutFormWithStripe = () => {
           {orderCompleted && (
             <div className="text-center py-16">
               <div className="w-16 h-16 mx-auto mb-4 bg-green-100 rounded-full flex items-center justify-center">
-                <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                <svg
+                  className="w-8 h-8 text-green-600"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M5 13l4 4L19 7"
+                  />
                 </svg>
               </div>
-              <h1 className="text-2xl font-bold text-gray-800 mb-4">
-                Thank you for your order!
-              </h1>
+              <h1 className="text-2xl font-bold text-gray-800 mb-4">Thank you for your order!</h1>
               <p className="text-gray-600 mb-6">
-                Your order has been placed successfully. You will receive a confirmation email shortly.
+                Your order has been placed successfully. You will receive a confirmation email
+                shortly.
               </p>
               {stripePaymentIntentId && (
-                <p className="text-sm text-gray-500">
-                  Payment ID: {stripePaymentIntentId}
-                </p>
+                <p className="text-sm text-gray-500">Payment ID: {stripePaymentIntentId}</p>
               )}
               <a
                 href="/"

@@ -115,10 +115,10 @@ const AddToCart = ({ product, variationId, fullWidth = false }: IProductRootObje
       };
 
   // Get cart data query
-  const { data, refetch } = useQuery(GET_CART, {
+  const { refetch } = useQuery(GET_CART, {
     notifyOnNetworkStatusChange: true,
-    onCompleted: () => {
-      const updatedCart = getFormattedCart(data);
+    onCompleted: (completedData) => {
+      const updatedCart = getFormattedCart(completedData);
       if (updatedCart) {
         syncWithWooCommerce(updatedCart);
       }

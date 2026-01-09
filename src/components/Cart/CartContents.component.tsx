@@ -26,9 +26,9 @@ const CartContents = () => {
 
   const { data, refetch } = useQuery(GET_CART, {
     notifyOnNetworkStatusChange: true,
-    onCompleted: () => {
-      const updatedCart = getFormattedCart(data);
-      if (!updatedCart && !data?.cart?.contents?.nodes?.length) {
+    onCompleted: (completedData) => {
+      const updatedCart = getFormattedCart(completedData);
+      if (!updatedCart && !completedData?.cart?.contents?.nodes?.length) {
         clearWooCommerceSession();
         return;
       }
@@ -38,22 +38,16 @@ const CartContents = () => {
     },
   });
 
-  const [updateCart, { loading: updateCartProcessing }] = useMutation(
-    UPDATE_CART,
-    {
-      onCompleted: () => {
+  const [updateCart, { loading: updateCartProcessing }] = useMutation(UPDATE_CART, {
+    onCompleted: () => {
+      refetch();
+      setTimeout(() => {
         refetch();
-        setTimeout(() => {
-          refetch();
-        }, 3000);
-      },
+      }, 3000);
     },
-  );
+  });
 
-  const handleRemoveProductClick = (
-    cartKey: string,
-    products: IProductRootObject[],
-  ) => {
+  const handleRemoveProductClick = (cartKey: string, products: IProductRootObject[]) => {
     if (products?.length) {
       const updatedItems = getUpdatedItems(products, 0, cartKey);
       updateCart({
@@ -79,9 +73,7 @@ const CartContents = () => {
 
   const getUnitPrice = (subtotal: string, quantity: number) => {
     const numericSubtotal = parseFloat(subtotal.replace(/[^0-9.-]+/g, ''));
-    return isNaN(numericSubtotal)
-      ? 'N/A'
-      : (numericSubtotal / quantity).toFixed(2);
+    return isNaN(numericSubtotal) ? 'N/A' : (numericSubtotal / quantity).toFixed(2);
   };
 
   return (
@@ -90,10 +82,7 @@ const CartContents = () => {
         <>
           <div className="bg-white rounded-lg p-6 mb-8 md:w-full">
             {data.cart.contents.nodes.map((item: IProductRootObject) => (
-              <div
-                key={item.key}
-                className="flex items-center border-b border-gray-200 py-4"
-              >
+              <div key={item.key} className="flex items-center border-b border-gray-200 py-4">
                 <div className="flex-shrink-0 w-24 h-24 relative hidden md:block">
                   <Image
                     src={
@@ -111,9 +100,7 @@ const CartContents = () => {
                   <h2 className="text-lg font-semibold">
                     {item.variation?.node?.name || item.product.node.name}
                   </h2>
-                  <p className="text-gray-600">
-                    ${getUnitPrice(item.subtotal, item.quantity)}
-                  </p>
+                  <p className="text-gray-600">${getUnitPrice(item.subtotal, item.quantity)}</p>
                 </div>
                 <div className="flex items-center">
                   <input
@@ -133,10 +120,7 @@ const CartContents = () => {
                   />
                   <Button
                     handleButtonClick={() =>
-                      handleRemoveProductClick(
-                        item.key,
-                        data.cart.contents.nodes,
-                      )
+                      handleRemoveProductClick(item.key, data.cart.contents.nodes)
                     }
                     variant="secondary"
                     buttonDisabled={updateCartProcessing}
@@ -158,7 +142,9 @@ const CartContents = () => {
             {!isCheckoutPage && (
               <div className="flex justify-center mb-4">
                 <Link href="/checkout" passHref>
-                  <Button variant="primary" fullWidth>PROCEED TO CHECKOUT</Button>
+                  <Button variant="primary" fullWidth>
+                    PROCEED TO CHECKOUT
+                  </Button>
                 </Link>
               </div>
             )}
@@ -166,9 +152,7 @@ const CartContents = () => {
         </>
       ) : (
         <div className="text-center">
-          <h2 className="text-2xl font-bold mb-4">
-            No products in cart
-          </h2>
+          <h2 className="text-2xl font-bold mb-4">No products in cart</h2>
           <Link href="/products" passHref>
             <Button variant="primary">Continue Shopping</Button>
           </Link>

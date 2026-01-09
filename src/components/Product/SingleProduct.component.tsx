@@ -11,6 +11,7 @@ import LoadingSpinner from '@/components/LoadingSpinner/LoadingSpinner.component
 const SingleProduct = ({ product }: IProductRootObject) => {
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [selectedVariationId, setSelectedVariationId] = useState<number | null>(null);
+  const [currentImage, setCurrentImage] = useState<string | undefined>();
 
   const placeholderFallBack = 'https://via.placeholder.com/600';
 
@@ -22,6 +23,11 @@ const SingleProduct = ({ product }: IProductRootObject) => {
       null
     );
   }, [product.variations, selectedVariationId]);
+
+  // Initialize image with product image
+  useEffect(() => {
+    setCurrentImage(product.image?.sourceUrl || placeholderFallBack);
+  }, [product.image]);
 
   // Set default variation on mount (first available variant, like WooCommerce)
   useEffect(() => {
@@ -36,18 +42,22 @@ const SingleProduct = ({ product }: IProductRootObject) => {
     }
   }, [product.variations]);
 
-  // Get display values - use variant data if selected, otherwise product data
-  const displayImage = useMemo(() => {
-    if (selectedVariation?.image?.sourceUrl) {
-      return selectedVariation.image.sourceUrl;
+  // Update image when variant selection changes
+  useEffect(() => {
+    if (selectedVariationId && product.variations) {
+      const variant = product.variations.nodes.find(
+        (v: IVariationNodes) => v.databaseId === selectedVariationId,
+      );
+      if (variant?.image?.sourceUrl) {
+        setCurrentImage(variant.image.sourceUrl);
+      } else {
+        // Fall back to product image if variant has no image
+        setCurrentImage(product.image?.sourceUrl || placeholderFallBack);
+      }
     }
-    return (
-      product.image?.sourceUrl ||
-      process.env.NEXT_PUBLIC_PLACEHOLDER_LARGE_IMAGE_URL ||
-      placeholderFallBack
-    );
-  }, [selectedVariation, product.image]);
+  }, [selectedVariationId, product.variations, product.image]);
 
+  // Get display values - use variant data if selected, otherwise product data
   const displayPrice = useMemo(() => {
     if (selectedVariation) {
       // Use variant price
@@ -99,7 +109,7 @@ const SingleProduct = ({ product }: IProductRootObject) => {
               <div className="max-w-xl mx-auto aspect-[3/4] relative overflow-hidden bg-gray-100">
                 <img
                   id="product-image"
-                  src={displayImage}
+                  src={currentImage || placeholderFallBack}
                   alt={selectedVariation?.name || product.name}
                   className="w-full h-full object-cover object-center transition duration-300 group-hover:scale-105"
                 />

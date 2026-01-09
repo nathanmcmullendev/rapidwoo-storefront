@@ -185,33 +185,61 @@ const SingleProduct = ({ product }: IProductRootObject) => {
   const colorInVariations = isAttributeInVariations('color');
   const sizeInVariations = isAttributeInVariations('size');
 
-  // Check if a specific color/size combination is in stock
+  // Helper: check if a variation is in stock
+  const isVariationInStock = (variant: IVariationNodes): boolean => {
+    return variant.stockStatus === 'IN_STOCK' || (variant.stockQuantity ?? 0) > 0;
+  };
+
+  // Helper: get attribute value from variation (handles empty = "Any")
+  const getVariantAttr = (variant: IVariationNodes, attrType: string): string | undefined => {
+    return variant.attributes?.nodes.find(
+      (a) => a.name.toLowerCase().replace('pa_', '') === attrType,
+    )?.value;
+  };
+
+  // Helper: check if attribute value matches (empty string = "Any" matches everything)
+  const attrMatches = (variantValue: string | undefined, selectedValue: string | null): boolean => {
+    if (!selectedValue) return true; // No selection = match all
+    if (variantValue === '' || variantValue === undefined) return true; // "Any" matches all
+    return variantValue.toLowerCase() === selectedValue.toLowerCase();
+  };
+
+  // CONTEXTUAL stock check - considers current selection of OTHER attribute
+  // When checking color: considers selected size
+  // When checking size: considers selected color
   const isAttributeInStock = (
     attrType: 'color' | 'size',
     value: string,
   ): { inStock: boolean; quantity: number } => {
     if (!product.variations?.nodes) return { inStock: true, quantity: 0 };
 
-    // If this attribute type isn't used in variations, it's just informational
-    // (product-level attribute) - always show as available
+    // If this attribute type isn't used in variations (all empty/"Any"), always available
     const attrUsedInVariations = attrType === 'color' ? colorInVariations : sizeInVariations;
     if (!attrUsedInVariations) {
       return { inStock: true, quantity: 0 };
     }
 
-    // Find all variants with this attribute value
+    // Get the OTHER attribute's current selection for contextual check
+    const otherSelection = attrType === 'color' ? selectedSize : selectedColor;
+    const otherAttrType = attrType === 'color' ? 'size' : 'color';
+
+    // Find variations that match this attribute value AND the other selection (if any)
     const matchingVariants = product.variations.nodes.filter((variant) => {
-      const attr = variant.attributes?.nodes.find(
-        (a) => a.name.toLowerCase().replace('pa_', '') === attrType,
-      );
-      return attr?.value.toLowerCase() === value.toLowerCase();
+      const thisAttrValue = getVariantAttr(variant, attrType);
+      const otherAttrValue = getVariantAttr(variant, otherAttrType);
+
+      // Must match this attribute (or be "Any")
+      const thisMatches =
+        thisAttrValue === '' || thisAttrValue?.toLowerCase() === value.toLowerCase();
+
+      // Must match other attribute selection (or be "Any", or no selection)
+      const otherMatches = attrMatches(otherAttrValue, otherSelection);
+
+      return thisMatches && otherMatches;
     });
 
-    // Check if any are in stock
-    const inStockVariant = matchingVariants.find(
-      (v) => v.stockStatus === 'IN_STOCK' || v.stockQuantity > 0,
-    );
-
+    // Check if any matching variants are in stock
+    const inStockVariant = matchingVariants.find(isVariationInStock);
     const totalQuantity = matchingVariants.reduce((sum, v) => sum + (v.stockQuantity || 0), 0);
 
     return {

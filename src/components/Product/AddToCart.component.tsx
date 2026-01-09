@@ -102,9 +102,15 @@ export interface IProduct {
   };
 }
 
+export interface ISelectedAttribute {
+  attributeName: string;
+  attributeValue: string;
+}
+
 export interface IProductRootObject {
   product: IProduct;
   variationId?: number;
+  selectedAttributes?: ISelectedAttribute[];
   fullWidth?: boolean;
 }
 
@@ -116,18 +122,29 @@ export interface IProductRootObject {
  * @param {boolean} fullWidth // Whether the button should be full-width
  */
 
-const AddToCart = ({ product, variationId, fullWidth = false }: IProductRootObject) => {
+const AddToCart = ({
+  product,
+  variationId,
+  selectedAttributes,
+  fullWidth = false,
+}: IProductRootObject) => {
   const { syncWithWooCommerce, isLoading: isCartLoading } = useCartStore();
   const [requestError, setRequestError] = useState<boolean>(false);
 
   const productId = product?.databaseId;
 
-  // For variable products, we need both productId and variationId
+  // For variable products, we need productId, variationId, and selected attributes
+  // The variation parameter is required for products with "Any" attributes
   const productQueryInput = variationId
     ? {
         clientMutationId: uuidv4(),
         productId,
         variationId,
+        // Include selected attributes for proper order details
+        ...(selectedAttributes &&
+          selectedAttributes.length > 0 && {
+            variation: selectedAttributes,
+          }),
       }
     : {
         clientMutationId: uuidv4(),

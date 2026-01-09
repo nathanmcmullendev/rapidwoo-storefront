@@ -9,6 +9,7 @@ import AddToCart, {
   IProductRootObject,
   IVariationNodes,
   IDefaultAttribute,
+  ISelectedAttribute,
 } from './AddToCart.component';
 import LoadingSpinner from '@/components/LoadingSpinner/LoadingSpinner.component';
 
@@ -360,6 +361,18 @@ const SingleProduct = ({ product }: IProductRootObject) => {
   // Check if any selection has been made
   const hasAnySelection = !!selectedColor || !!selectedSize;
 
+  // Build selected attributes array for AddToCart
+  const selectedAttributes = useMemo((): ISelectedAttribute[] => {
+    const attrs: ISelectedAttribute[] = [];
+    if (selectedColor) {
+      attrs.push({ attributeName: 'pa_color', attributeValue: selectedColor.toLowerCase() });
+    }
+    if (selectedSize) {
+      attrs.push({ attributeName: 'pa_size', attributeValue: selectedSize.toLowerCase() });
+    }
+    return attrs;
+  }, [selectedColor, selectedSize]);
+
   // Legacy dropdown handler (for products without color/size attributes)
   const handleVariationChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const newVariationId = Number(e.target.value);
@@ -620,6 +633,7 @@ const SingleProduct = ({ product }: IProductRootObject) => {
                     <AddToCart
                       product={product}
                       variationId={selectedVariation?.databaseId}
+                      selectedAttributes={selectedAttributes}
                       fullWidth={true}
                     />
                   ) : (

@@ -19,59 +19,52 @@ const SingleProduct = ({ product }: IProductRootObject) => {
 
   const placeholderFallBack = 'https://via.placeholder.com/600';
 
-  // Helper function to find variant matching default attributes
+  // Helper function to find variant matching default attributes or product image
   const findDefaultVariant = useMemo((): IVariationNodes | null => {
     if (!product.variations || product.variations.nodes.length === 0) {
       return null;
     }
 
     const defaultAttrs = product.defaultAttributes?.nodes;
+    const productImageUrl = product.image?.sourceUrl;
 
-    // Debug: log what we're getting from the API
-    if (typeof window !== 'undefined') {
-      console.log('Default attributes from WooCommerce:', defaultAttrs);
-      console.log(
-        'Variations:',
-        product.variations.nodes.map((v) => ({
-          name: v.name,
-          id: v.databaseId,
-          attributes: v.attributes?.nodes,
-        })),
-      );
-    }
+    // Strategy 1: If defaultAttributes exist, find matching variant
+    if (defaultAttrs && defaultAttrs.length > 0) {
+      const matchingVariant = product.variations.nodes.find((variant: IVariationNodes) => {
+        if (!variant.attributes?.nodes) return false;
 
-    // If no default attributes set, return first variant
-    if (!defaultAttrs || defaultAttrs.length === 0) {
-      console.log('No default attributes, using first variant');
-      return product.variations.nodes[0];
-    }
+        return defaultAttrs.every((defaultAttr: IDefaultAttribute) => {
+          const variantAttr = variant.attributes?.nodes.find((attr) => {
+            const attrName = attr.name.toLowerCase().replace('pa_', '');
+            const defaultName = defaultAttr.name.toLowerCase().replace('pa_', '');
+            return attrName === defaultName;
+          });
 
-    // Find variant that matches all default attributes
-    const matchingVariant = product.variations.nodes.find((variant: IVariationNodes) => {
-      if (!variant.attributes?.nodes) return false;
-
-      // Check if all default attributes match this variant's attributes
-      return defaultAttrs.every((defaultAttr: IDefaultAttribute) => {
-        // Try matching by name (could be "Color" or "pa_color" format)
-        const variantAttr = variant.attributes?.nodes.find((attr) => {
-          const attrName = attr.name.toLowerCase().replace('pa_', '');
-          const defaultName = defaultAttr.name.toLowerCase().replace('pa_', '');
-          return attrName === defaultName;
+          if (!variantAttr) return false;
+          return variantAttr.value.toLowerCase() === defaultAttr.value.toLowerCase();
         });
-
-        if (!variantAttr) return false;
-
-        const matches = variantAttr.value.toLowerCase() === defaultAttr.value.toLowerCase();
-        console.log(
-          `Comparing: variant ${variantAttr.value} vs default ${defaultAttr.value} = ${matches}`,
-        );
-        return matches;
       });
-    });
 
-    console.log('Matching variant found:', matchingVariant?.name || 'none, using first');
-    return matchingVariant || product.variations.nodes[0];
-  }, [product.variations, product.defaultAttributes]);
+      if (matchingVariant) {
+        return matchingVariant;
+      }
+    }
+
+    // Strategy 2: Find variant whose image matches product's main image
+    // This ensures we show the same variant as WooCommerce's shop page
+    if (productImageUrl) {
+      const imageMatchVariant = product.variations.nodes.find(
+        (variant: IVariationNodes) => variant.image?.sourceUrl === productImageUrl,
+      );
+
+      if (imageMatchVariant) {
+        return imageMatchVariant;
+      }
+    }
+
+    // Strategy 3: Fall back to first variant
+    return product.variations.nodes[0];
+  }, [product.variations, product.defaultAttributes, product.image]);
 
   // Find the currently selected variation
   const selectedVariation = useMemo(() => {

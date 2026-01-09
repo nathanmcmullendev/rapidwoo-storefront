@@ -202,6 +202,62 @@ const client = new ApolloClient({
 
 ---
 
+### 2.7 PDP (Product Detail Page) Optimization
+
+**What**: Applied same patterns to single product page that worked for product grid
+
+**Problem**: Products page scored 99, but PDP scored 64 due to:
+
+- **CLS 0.906**: Image had no explicit `width`/`height` attributes
+- **LCP 3.4s**: `sizes="100vw"` caused browser to pick oversized image
+
+**File**: `src/components/Product/SingleProduct.component.tsx`
+
+**Before** (wrong):
+
+```tsx
+<img
+  src={getOptimizedImageUrl(currentImage, 'full')} // 1200px - too large
+  sizes="(max-width: 768px) 100vw, 50vw" // 100vw picks w_1200
+  // NO width/height attributes = CLS
+/>
+```
+
+**After** (correct):
+
+```tsx
+<img
+  src={getOptimizedImageUrl(currentImage, 'preview')} // 800px - appropriate
+  sizes={PDP_SIZES} // 90vw picks w_800
+  width={600}
+  height={800}
+/>
+```
+
+**New Constants in `src/utils/images.ts`**:
+
+```typescript
+// PDP layout: single image in 2-col grid
+export const PDP_SIZES = '(max-width: 768px) 90vw, 45vw';
+
+// Standard dimensions for CLS prevention
+export const IMAGE_DIMENSIONS = {
+  grid: { width: 400, height: 533 }, // Product cards
+  pdp: { width: 600, height: 800 }, // PDP main image
+  thumbnail: { width: 96, height: 96 }, // Cart
+};
+```
+
+**Why Different From Grid**:
+| Layout | Mobile Display Width | Correct `sizes` | Size Preset |
+|--------|---------------------|-----------------|-------------|
+| 2-col grid | 50% viewport | `50vw` | `grid` (400px) |
+| PDP (max-w-xl) | ~90% viewport | `90vw` | `preview` (800px) |
+
+**Impact**: CLS 0.906 → 0, LCP 3.4s → target <2.5s
+
+---
+
 ## 3. Failed Approaches (Lessons Learned)
 
 ### Attempted: Custom Card srcSet
@@ -399,19 +455,20 @@ curl -X POST https://rapidwoo-storefront.vercel.app/api/revalidate \
 
 ## 9. Files Modified This Session
 
-| File                                               | Change                           |
-| -------------------------------------------------- | -------------------------------- |
-| `src/pages/index.tsx`                              | Added SSG with getStaticProps    |
-| `src/pages/products.tsx`                           | SSG + reduced padding            |
-| `src/pages/product/[slug].tsx`                     | SSG with getStaticPaths          |
-| `src/pages/api/revalidate.ts`                      | NEW: On-demand ISR endpoint      |
-| `src/utils/graphql-fetch.ts`                       | NEW: Server-side GraphQL utility |
-| `src/utils/images.ts`                              | Cloudinary utility + sizes fix   |
-| `src/components/Product/ProductCard.component.tsx` | Eager loading, dimensions        |
-| `src/components/Product/ProductList.component.tsx` | Collapsible filters, 2-col grid  |
-| `src/utils/apollo/ApolloClient.js`                 | DevTools disabled                |
-| `src/utils/auth.ts`                                | DevTools disabled                |
-| `RAPIDWOO-PERFORMANCE-GUIDE.md`                    | This documentation               |
+| File                                                 | Change                                     |
+| ---------------------------------------------------- | ------------------------------------------ |
+| `src/pages/index.tsx`                                | Added SSG with getStaticProps              |
+| `src/pages/products.tsx`                             | SSG + reduced padding                      |
+| `src/pages/product/[slug].tsx`                       | SSG with getStaticPaths                    |
+| `src/pages/api/revalidate.ts`                        | NEW: On-demand ISR endpoint                |
+| `src/utils/graphql-fetch.ts`                         | NEW: Server-side GraphQL utility           |
+| `src/utils/images.ts`                                | Cloudinary utility + sizes fix + PDP_SIZES |
+| `src/components/Product/ProductCard.component.tsx`   | Eager loading, dimensions                  |
+| `src/components/Product/SingleProduct.component.tsx` | PDP image fix: dimensions + PDP_SIZES      |
+| `src/components/Product/ProductList.component.tsx`   | Collapsible filters, 2-col grid            |
+| `src/utils/apollo/ApolloClient.js`                   | DevTools disabled                          |
+| `src/utils/auth.ts`                                  | DevTools disabled                          |
+| `RAPIDWOO-PERFORMANCE-GUIDE.md`                      | This documentation                         |
 
 ---
 
@@ -456,14 +513,17 @@ ade31d3f chore: disable apollo devtools connection
 
 These configurations are optimized and stable:
 
-1. **`sizes` attribute**: `50vw` on mobile matches 2-col grid
-2. **`srcSet`**: Must include the `src` URL
-3. **Image dimensions**: `width={400} height={533}` prevents CLS
-4. **Eager loading**: First 6 images is optimal threshold
-5. **ISR interval**: 60 seconds balances freshness and build load
+1. **Grid `sizes` attribute**: `DEFAULT_SIZES` (50vw) matches 2-col grid
+2. **PDP `sizes` attribute**: `PDP_SIZES` (90vw) matches max-w-xl container
+3. **`srcSet`**: Must include the `src` URL
+4. **Grid image dimensions**: `width={400} height={533}` prevents CLS
+5. **PDP image dimensions**: `width={600} height={800}` prevents CLS
+6. **Eager loading**: First 6 images is optimal threshold for grids
+7. **ISR interval**: 60 seconds balances freshness and build load
 
 ---
 
-_Final Score: 99/100_
+_Products Page Score: 99/100_
+_PDP Score: Target 90+ (was 64)_
 _Improvement: +24 points over WooCommerce baseline_
-_Session Date: January 2026_
+_Last Updated: January 9, 2026_

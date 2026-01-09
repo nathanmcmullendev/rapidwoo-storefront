@@ -3,7 +3,7 @@ import { useState, useEffect, useMemo } from 'react';
 
 // Utils
 import { paddedPrice } from '@/utils/functions/functions';
-import { getOptimizedImageUrl, getImageSrcSet } from '@/utils/images';
+import { getOptimizedImageUrl, getImageSrcSet, PDP_SIZES } from '@/utils/images';
 
 // Components
 import AddToCart, {
@@ -427,15 +427,17 @@ const SingleProduct = ({ product }: IProductRootObject) => {
       ) : (
         <div className="container mx-auto px-4 py-8">
           <div className="flex flex-col md:grid md:grid-cols-2 md:gap-8">
-            {/* Image Container */}
+            {/* Image Container - explicit dimensions prevent CLS */}
             <div className="mb-6 md:mb-0 group">
               <div className="max-w-xl mx-auto aspect-[3/4] relative overflow-hidden bg-gray-100">
                 <img
                   id="product-image"
-                  src={getOptimizedImageUrl(currentImage || placeholderFallBack, 'full')}
+                  src={getOptimizedImageUrl(currentImage || placeholderFallBack, 'preview')}
                   srcSet={getImageSrcSet(currentImage) || undefined}
-                  sizes="(max-width: 768px) 100vw, 50vw"
+                  sizes={PDP_SIZES}
                   alt={selectedVariation?.name || product.name}
+                  width={600}
+                  height={800}
                   className="w-full h-full object-cover object-center transition duration-300 group-hover:scale-105"
                   loading="eager"
                   fetchPriority="high"

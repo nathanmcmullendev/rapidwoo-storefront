@@ -98,9 +98,30 @@ export function getImageSrcSet(sourceUrl: string | undefined): string {
 
 /**
  * Default sizes attribute for responsive images
- * Matches the typical grid layout breakpoints
+ * Matches the typical grid layout breakpoints (2-col mobile, 3-4 col desktop)
  */
 export const DEFAULT_SIZES = '(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw';
+
+/**
+ * PDP (Product Detail Page) sizes attribute
+ * Single product image in 2-column layout:
+ * - Mobile: container is ~90% viewport (max-w-xl constraint)
+ * - Desktop: 2-col grid means image is ~45% viewport
+ */
+export const PDP_SIZES = '(max-width: 768px) 90vw, 45vw';
+
+/**
+ * Standard image dimensions for CLS prevention
+ * These match common aspect ratios used in the storefront
+ */
+export const IMAGE_DIMENSIONS = {
+  /** Product cards in grid (3:4 aspect ratio) */
+  grid: { width: 400, height: 533 },
+  /** PDP main image (3:4 aspect ratio, larger) */
+  pdp: { width: 600, height: 800 },
+  /** Cart thumbnails (1:1 aspect ratio) */
+  thumbnail: { width: 96, height: 96 },
+} as const;
 
 /**
  * Props interface for optimized image components

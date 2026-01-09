@@ -97,9 +97,11 @@ const CartContents = () => {
                 <div className="flex-shrink-0 w-24 h-24 relative hidden md:block">
                   <Image
                     src={
-                      item.product.node.image?.sourceUrl || '/placeholder.png'
+                      item.variation?.node?.image?.sourceUrl ||
+                      item.product.node.image?.sourceUrl ||
+                      '/placeholder.png'
                     }
-                    alt={item.product.node.name}
+                    alt={item.variation?.node?.name || item.product.node.name}
                     layout="fill"
                     objectFit="cover"
                     className="rounded"
@@ -107,7 +109,7 @@ const CartContents = () => {
                 </div>
                 <div className="flex-grow ml-4">
                   <h2 className="text-lg font-semibold">
-                    {item.product.node.name}
+                    {item.variation?.node?.name || item.product.node.name}
                   </h2>
                   <p className="text-gray-600">
                     ${getUnitPrice(item.subtotal, item.quantity)}

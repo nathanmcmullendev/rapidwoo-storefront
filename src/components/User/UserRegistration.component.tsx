@@ -45,9 +45,9 @@ const UserRegistration = () => {
     return (
       <div className="text-center my-8">
         <h2 className="text-2xl font-bold text-green-600 mb-4">
-          Registrering vellykket!
+          Registration Successful!
         </h2>
-        <p>Du kan nå logge inn med din konto.</p>
+        <p>You can now log in with your account.</p>
       </div>
     );
   }
@@ -59,31 +59,31 @@ const UserRegistration = () => {
           <div className="mx-auto lg:w-1/2 flex flex-wrap">
             <InputField
               inputName="username"
-              inputLabel="Brukernavn"
+              inputLabel="Username"
               type="text"
               customValidation={{ required: true }}
             />
             <InputField
               inputName="email"
-              inputLabel="E-post"
+              inputLabel="Email"
               type="email"
               customValidation={{ required: true }}
             />
             <InputField
               inputName="password"
-              inputLabel="Passord"
+              inputLabel="Password"
               type="password"
               customValidation={{ required: true }}
             />
             <InputField
               inputName="firstName"
-              inputLabel="Fornavn"
+              inputLabel="First Name"
               type="text"
               customValidation={{ required: true }}
             />
             <InputField
               inputName="lastName"
-              inputLabel="Etternavn"
+              inputLabel="Last Name"
               type="text"
               customValidation={{ required: true }}
             />
@@ -97,7 +97,7 @@ const UserRegistration = () => {
             <div className="w-full p-2">
               <div className="mt-4 flex justify-center">
                 <Button variant="primary" buttonDisabled={loading}>
-                  {loading ? <LoadingSpinner /> : 'Registrer'}
+                  {loading ? <LoadingSpinner /> : 'Register'}
                 </Button>
               </div>
             </div>

@@ -51,6 +51,11 @@ export interface IVariationNodes {
   onSale: boolean;
   salePrice?: string;
   regularPrice: string;
+  image?: {
+    id: string;
+    sourceUrl: string;
+    altText?: string;
+  };
 }
 
 interface IVariations {
@@ -91,11 +96,7 @@ export interface IProductRootObject {
  * @param {boolean} fullWidth // Whether the button should be full-width
  */
 
-const AddToCart = ({
-  product,
-  variationId,
-  fullWidth = false,
-}: IProductRootObject) => {
+const AddToCart = ({ product, variationId, fullWidth = false }: IProductRootObject) => {
   const { syncWithWooCommerce, isLoading: isCartLoading } = useCartStore();
   const [requestError, setRequestError] = useState<boolean>(false);
 

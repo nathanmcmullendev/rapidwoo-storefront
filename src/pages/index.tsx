@@ -1,40 +1,86 @@
 // Components
-import { useQuery } from '@apollo/client';
 import Hero from '@/components/Index/Hero.component';
 import DisplayProducts from '@/components/Product/DisplayProducts.component';
 import Layout from '@/components/Layout/Layout.component';
-import LoadingSpinner from '@/components/LoadingSpinner/LoadingSpinner.component';
 
 // Types
-import type { NextPage } from 'next';
+import type { NextPage, GetStaticProps, InferGetStaticPropsType } from 'next';
 
-// GraphQL
-import { FETCH_ALL_PRODUCTS_QUERY } from '@/utils/gql/GQL_QUERIES';
+// SSG utilities
+import { fetchGraphQL, PRODUCTS_QUERY } from '@/utils/graphql-fetch';
+
+interface ProductNode {
+  databaseId: number;
+  name: string;
+  onSale: boolean;
+  slug: string;
+  image: { sourceUrl: string } | null;
+  price: string;
+  regularPrice: string;
+  salePrice: string | null;
+  variations?: {
+    nodes: Array<{
+      price: string;
+      regularPrice: string;
+      salePrice: string | null;
+    }>;
+  };
+}
+
+interface ProductsData {
+  products: {
+    nodes: ProductNode[];
+  };
+}
 
 /**
- * Main index page - Client-side rendered
+ * Main index page - Static Site Generation with ISR
+ * Products are pre-rendered at build time and revalidated every 60 seconds
  * @function Index
  * @returns {JSX.Element} - Rendered component
  */
-const Index: NextPage = () => {
-  const { data, loading, error } = useQuery(FETCH_ALL_PRODUCTS_QUERY);
-
+const Index: NextPage<InferGetStaticPropsType<typeof getStaticProps>> = ({ products }) => {
   return (
     <Layout title="Home">
       <Hero />
-      {loading && (
-        <div className="flex justify-center py-16">
-          <LoadingSpinner />
+      {products?.length > 0 ? (
+        <DisplayProducts products={products as any} />
+      ) : (
+        <div className="container mx-auto px-4 py-8 text-center text-gray-500">
+          No products available.
         </div>
       )}
-      {error && (
-        <div className="container mx-auto px-4 py-8 text-center text-red-500">
-          Failed to load products. Please try again later.
-        </div>
-      )}
-      {data?.products?.nodes && <DisplayProducts products={data.products.nodes} />}
     </Layout>
   );
+};
+
+/**
+ * Fetch products at build time (SSG) with Incremental Static Regeneration (ISR)
+ * Revalidates every 60 seconds in production
+ */
+export const getStaticProps: GetStaticProps<{ products: ProductNode[] }> = async () => {
+  try {
+    const data = await fetchGraphQL<ProductsData>(PRODUCTS_QUERY);
+
+    return {
+      props: {
+        products: data.products.nodes || [],
+      },
+      // Revalidate every 60 seconds (ISR)
+      // In production, pages are regenerated in the background
+      revalidate: 60,
+    };
+  } catch (error) {
+    console.error('Failed to fetch products:', error);
+
+    return {
+      props: {
+        products: [],
+      },
+      // Retry sooner if there was an error
+      revalidate: 10,
+    };
+  }
 };
 
 export default Index;

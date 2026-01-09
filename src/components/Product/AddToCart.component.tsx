@@ -17,7 +17,7 @@ import { GET_CART } from '@/utils/gql/GQL_QUERIES';
 import { ADD_TO_CART } from '@/utils/gql/GQL_MUTATIONS';
 
 interface IImage {
-  __typename: string;
+  __typename?: string;
   id: string;
   uri: string;
   title: string;
@@ -26,18 +26,18 @@ interface IImage {
 }
 
 interface IVariationNode {
-  __typename: string;
+  __typename?: string;
   name: string;
 }
 
 // Note: WooGraphQL uses singular form (allPaColor, allPaSize)
 interface IAllPaColor {
-  __typename: string;
+  __typename?: string;
   nodes: IVariationNode[];
 }
 
 interface IAllPaSize {
-  __typename: string;
+  __typename?: string;
   nodes: IVariationNode[];
 }
 
@@ -55,16 +55,16 @@ export interface IDefaultAttribute {
 }
 
 export interface IVariationNodes {
-  __typename: string;
+  __typename?: string;
   id: string;
   databaseId: number;
   name: string;
   stockStatus: string;
-  stockQuantity: number;
+  stockQuantity?: number | null;
   purchasable: boolean;
   onSale: boolean;
-  salePrice?: string;
-  regularPrice: string;
+  salePrice?: string | null;
+  regularPrice?: string;
   image?: {
     id: string;
     sourceUrl: string;
@@ -76,24 +76,24 @@ export interface IVariationNodes {
 }
 
 interface IVariations {
-  __typename: string;
+  __typename?: string;
   nodes: IVariationNodes[];
 }
 
 export interface IProduct {
-  __typename: string;
+  __typename?: string;
   id: string;
   databaseId: number;
   averageRating: number;
   slug: string;
   description: string;
   onSale: boolean;
-  image: IImage;
+  image: IImage | null;
   name: string;
-  salePrice?: string;
-  regularPrice: string;
-  price: string;
-  stockQuantity: number;
+  salePrice?: string | null;
+  regularPrice?: string;
+  price?: string;
+  stockQuantity?: number | null;
   allPaColor?: IAllPaColor;
   allPaSize?: IAllPaSize;
   variations?: IVariations;

@@ -1,10 +1,10 @@
 export interface Image {
-  __typename: string;
+  __typename?: string;
   sourceUrl?: string;
 }
 
 export interface Node {
-  __typename: string;
+  __typename?: string;
   price: string;
   regularPrice: string;
   salePrice?: string;
@@ -30,12 +30,12 @@ export interface AttributeNode {
 }
 
 export interface Product {
-  __typename: string;
+  __typename?: string;
   databaseId: number;
   name: string;
   onSale: boolean;
   slug: string;
-  image: Image;
+  image: Image | null;
   price: string;
   regularPrice: string;
   salePrice?: string;
@@ -48,7 +48,7 @@ export interface Product {
   allPaSizes?: {
     nodes: SizeNode[];
   };
-  variations: {
+  variations?: {
     nodes: Array<{
       price: string;
       regularPrice: string;

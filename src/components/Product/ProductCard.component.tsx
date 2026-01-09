@@ -12,7 +12,7 @@ interface ProductCardProps {
   slug: string;
   image?: {
     sourceUrl?: string;
-  };
+  } | null;
   /** True for above-fold images that should load eagerly */
   preloaded?: boolean;
 }

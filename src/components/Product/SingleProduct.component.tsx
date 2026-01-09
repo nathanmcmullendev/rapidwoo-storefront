@@ -572,7 +572,7 @@ const SingleProduct = ({ product }: IProductRootObject) => {
                       {product.variations.nodes.map((variation: IVariationNodes) => {
                         const variantLabel = variation.name.split('- ').pop();
                         const stockInfo =
-                          variation.stockQuantity > 0
+                          variation.stockQuantity && variation.stockQuantity > 0
                             ? `(${variation.stockQuantity} in stock)`
                             : variation.stockStatus === 'IN_STOCK'
                               ? '(In stock)'

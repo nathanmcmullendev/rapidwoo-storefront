@@ -1,36 +1,36 @@
-// Client-side rendered products page (bypasses build-time GraphQL issues)
+// SSG Products page with ISR
 import Head from 'next/head';
-import { useQuery } from '@apollo/client';
 import Layout from '@/components/Layout/Layout.component';
 import ProductList from '@/components/Product/ProductList.component';
-import { FETCH_ALL_PRODUCTS_QUERY } from '@/utils/gql/GQL_QUERIES';
-import type { NextPage } from 'next';
+import type { NextPage, GetStaticProps, InferGetStaticPropsType } from 'next';
+import { fetchGraphQL, PRODUCTS_QUERY } from '@/utils/graphql-fetch';
 
-const Products: NextPage = () => {
-  const { data, loading, error } = useQuery(FETCH_ALL_PRODUCTS_QUERY);
+interface ProductNode {
+  databaseId: number;
+  name: string;
+  onSale: boolean;
+  slug: string;
+  image: { sourceUrl: string } | null;
+  price: string;
+  regularPrice: string;
+  salePrice: string | null;
+  variations?: {
+    nodes: Array<{
+      price: string;
+      regularPrice: string;
+      salePrice: string | null;
+    }>;
+  };
+}
 
-  if (loading) {
-    return (
-      <Layout title="Products">
-        <div className="flex justify-center items-center min-h-[60vh]">
-          <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-blue-600"></div>
-        </div>
-      </Layout>
-    );
-  }
+interface ProductsData {
+  products: {
+    nodes: ProductNode[];
+  };
+}
 
-  if (error) {
-    return (
-      <Layout title="Products">
-        <div className="flex flex-col justify-center items-center min-h-[60vh]">
-          <p className="text-red-500 text-lg mb-4">Failed to load products</p>
-          <p className="text-gray-500 text-sm">{error.message}</p>
-        </div>
-      </Layout>
-    );
-  }
-
-  if (!data?.products?.nodes) {
+const Products: NextPage<InferGetStaticPropsType<typeof getStaticProps>> = ({ products }) => {
+  if (!products?.length) {
     return (
       <Layout title="Products">
         <div className="flex justify-center items-center min-h-[60vh]">
@@ -48,10 +48,35 @@ const Products: NextPage = () => {
 
       <div className="container mx-auto px-4 py-8">
         <h1 className="text-3xl font-bold text-gray-800 mb-8">All Products</h1>
-        <ProductList products={data.products.nodes} title="" />
+        <ProductList products={products as any} title="" />
       </div>
     </Layout>
   );
+};
+
+/**
+ * Fetch products at build time (SSG) with Incremental Static Regeneration (ISR)
+ */
+export const getStaticProps: GetStaticProps<{ products: ProductNode[] }> = async () => {
+  try {
+    const data = await fetchGraphQL<ProductsData>(PRODUCTS_QUERY);
+
+    return {
+      props: {
+        products: data.products.nodes || [],
+      },
+      revalidate: 60,
+    };
+  } catch (error) {
+    console.error('Failed to fetch products:', error);
+
+    return {
+      props: {
+        products: [],
+      },
+      revalidate: 10,
+    };
+  }
 };
 
 export default Products;

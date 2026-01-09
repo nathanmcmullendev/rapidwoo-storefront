@@ -1,64 +1,168 @@
-// Client-side rendered single product page
-import { useRouter } from 'next/router';
-import { useQuery } from '@apollo/client';
+// SSG Single product page with ISR
+import Link from 'next/link';
 import SingleProduct from '@/components/Product/SingleProduct.component';
+import type { IProduct } from '@/components/Product/AddToCart.component';
 import Layout from '@/components/Layout/Layout.component';
-import { GET_SINGLE_PRODUCT } from '@/utils/gql/GQL_QUERIES';
-import type { NextPage } from 'next';
+import type { NextPage, GetStaticProps, GetStaticPaths, InferGetStaticPropsType } from 'next';
+import { fetchGraphQL, SINGLE_PRODUCT_QUERY, PRODUCT_SLUGS_QUERY } from '@/utils/graphql-fetch';
 
-const ProductPage: NextPage = () => {
-  const router = useRouter();
-  const { slug } = router.query;
+interface ProductSlugsData {
+  products: {
+    nodes: Array<{ slug: string }>;
+  };
+}
 
-  const { data, loading, error } = useQuery(GET_SINGLE_PRODUCT, {
-    variables: { slug },
-    skip: !slug,
-  });
+interface SingleProductData {
+  product: {
+    id: string;
+    databaseId: number;
+    averageRating: number;
+    slug: string;
+    description: string;
+    onSale: boolean;
+    image: {
+      id: string;
+      uri: string;
+      title: string;
+      srcSet: string;
+      sourceUrl: string;
+    } | null;
+    name: string;
+    salePrice?: string;
+    regularPrice?: string;
+    price?: string;
+    stockQuantity?: number;
+    stockStatus?: string;
+    defaultAttributes?: {
+      nodes: Array<{
+        id: string;
+        attributeId: number;
+        name: string;
+        value: string;
+      }>;
+    };
+    allPaColor?: {
+      nodes: Array<{ name: string }>;
+    };
+    allPaSize?: {
+      nodes: Array<{ name: string }>;
+    };
+    variations?: {
+      nodes: Array<{
+        id: string;
+        databaseId: number;
+        name: string;
+        stockStatus: string;
+        stockQuantity: number | null;
+        purchasable: boolean;
+        onSale: boolean;
+        salePrice: string | null;
+        regularPrice: string;
+        image: {
+          id: string;
+          sourceUrl: string;
+          altText: string;
+        } | null;
+        attributes: {
+          nodes: Array<{
+            id: string;
+            name: string;
+            value: string;
+          }>;
+        };
+      }>;
+    };
+  } | null;
+}
 
-  if (loading || !slug) {
-    return (
-      <Layout title="Product">
-        <div className="flex justify-center items-center min-h-[60vh]">
-          <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-blue-600"></div>
-        </div>
-      </Layout>
-    );
-  }
-
-  if (error) {
-    return (
-      <Layout title="Product">
-        <div className="flex flex-col justify-center items-center min-h-[60vh]">
-          <p className="text-red-500 text-lg mb-4">Failed to load product</p>
-          <p className="text-gray-500 text-sm">{error.message}</p>
-        </div>
-      </Layout>
-    );
-  }
-
-  if (!data?.product) {
+const ProductPage: NextPage<InferGetStaticPropsType<typeof getStaticProps>> = ({ product }) => {
+  if (!product) {
     return (
       <Layout title="Product Not Found">
         <div className="flex flex-col justify-center items-center min-h-[60vh]">
           <p className="text-gray-500 text-lg">Product not found</p>
-          <button
-            onClick={() => router.push('/products')}
-            className="mt-4 text-blue-600 hover:text-blue-800"
-          >
+          <Link href="/products" className="mt-4 text-blue-600 hover:text-blue-800">
             Browse all products
-          </button>
+          </Link>
         </div>
       </Layout>
     );
   }
 
-  const product = data.product;
-
   return (
     <Layout title={product.name || 'Product'}>
-      <SingleProduct product={product} />
+      <SingleProduct product={product as IProduct} />
     </Layout>
   );
+};
+
+/**
+ * Generate static paths for all products at build time
+ * Uses fallback: 'blocking' to handle new products added after build
+ */
+export const getStaticPaths: GetStaticPaths = async () => {
+  try {
+    const data = await fetchGraphQL<ProductSlugsData>(PRODUCT_SLUGS_QUERY);
+
+    const paths = data.products.nodes.map((product) => ({
+      params: { slug: product.slug },
+    }));
+
+    return {
+      paths,
+      // 'blocking' means new pages will be server-rendered on first request
+      // then cached for subsequent requests (best for SEO)
+      fallback: 'blocking',
+    };
+  } catch (error) {
+    console.error('Failed to fetch product slugs:', error);
+
+    return {
+      paths: [],
+      fallback: 'blocking',
+    };
+  }
+};
+
+/**
+ * Fetch single product at build time with ISR
+ */
+export const getStaticProps: GetStaticProps<{ product: SingleProductData['product'] }> = async ({
+  params,
+}) => {
+  const slug = params?.slug as string;
+
+  if (!slug) {
+    return {
+      notFound: true,
+    };
+  }
+
+  try {
+    const data = await fetchGraphQL<SingleProductData>(SINGLE_PRODUCT_QUERY, { slug });
+
+    if (!data.product) {
+      return {
+        notFound: true,
+        revalidate: 60,
+      };
+    }
+
+    return {
+      props: {
+        product: data.product,
+      },
+      // Revalidate every 60 seconds
+      revalidate: 60,
+    };
+  } catch (error) {
+    console.error(`Failed to fetch product ${slug}:`, error);
+
+    return {
+      notFound: true,
+      revalidate: 10,
+    };
+  }
 };
 
 export default ProductPage;

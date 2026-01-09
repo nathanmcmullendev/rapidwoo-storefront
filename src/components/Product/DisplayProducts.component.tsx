@@ -6,32 +6,28 @@ import { filteredVariantPrice, paddedPrice } from '@/utils/functions/functions';
 import { getOptimizedImageUrl, getImageSrcSet, DEFAULT_SIZES } from '@/utils/images';
 
 interface Image {
-  __typename: string;
   sourceUrl?: string;
 }
 
 interface Node {
-  __typename: string;
   price: string;
   regularPrice: string;
-  salePrice?: string;
+  salePrice?: string | null;
 }
 
 interface Variations {
-  __typename: string;
   nodes: Node[];
 }
 
 interface RootObject {
-  __typename: string;
   name: string;
   onSale: boolean;
   slug: string;
-  image: Image;
+  image: Image | null;
   price: string;
   regularPrice: string;
-  salePrice?: string;
-  variations: Variations;
+  salePrice?: string | null;
+  variations?: Variations;
 }
 
 interface IDisplayProductsProps {

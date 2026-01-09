@@ -33,7 +33,7 @@ const ProductCard = ({
   const formattedSalePrice = salePrice ? paddedPrice(salePrice, '$') : salePrice;
 
   // Generate optimized Cloudinary URLs
-  const imageUrl = getOptimizedImageUrl(image?.sourceUrl, 'preview');
+  const imageUrl = getOptimizedImageUrl(image?.sourceUrl, 'grid');
   const srcSet = getImageSrcSet(image?.sourceUrl);
 
   return (

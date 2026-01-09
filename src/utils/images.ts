@@ -12,7 +12,7 @@
  * - Zero client-side JavaScript overhead
  */
 
-const CLOUDINARY_CLOUD = 'dh4qwuvuo';
+const CLOUDINARY_CLOUD = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD || 'dh4qwuvuo';
 const CLOUDINARY_BASE = `https://res.cloudinary.com/${CLOUDINARY_CLOUD}/image/fetch`;
 
 /**
@@ -22,9 +22,11 @@ const CLOUDINARY_BASE = `https://res.cloudinary.com/${CLOUDINARY_CLOUD}/image/fe
  * - full: Lightbox / high-res view (~150-200KB)
  */
 export const IMAGE_SIZES = {
-  thumbnail: 400,
+  thumbnail: 100,
+  grid: 400,
   preview: 800,
   full: 1200,
+  hero: 1600,
 } as const;
 
 export type ImageSize = keyof typeof IMAGE_SIZES;

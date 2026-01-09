@@ -64,7 +64,7 @@ const DisplayProducts = ({ products }: IDisplayProductsProps) => (
 
             // First 6 products are above fold - load eagerly for LCP
             const isAboveFold = index < 6;
-            const imageUrl = getOptimizedImageUrl(image?.sourceUrl, 'preview');
+            const imageUrl = getOptimizedImageUrl(image?.sourceUrl, 'grid');
             const srcSet = getImageSrcSet(image?.sourceUrl);
 
             return (

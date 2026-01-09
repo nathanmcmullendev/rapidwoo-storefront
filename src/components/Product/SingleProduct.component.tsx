@@ -231,8 +231,8 @@ const SingleProduct = ({ product }: IProductRootObject) => {
     if (product.variations?.nodes?.length) {
       console.log('=== PRODUCT VARIATIONS DEBUG ===');
       console.log('Product:', product.name);
-      console.log('Available Colors:', availableColors, '| In variations:', colorInVariations);
-      console.log('Available Sizes:', availableSizes, '| In variations:', sizeInVariations);
+      console.log('Colors:', availableColors, '| colorInVariations:', colorInVariations);
+      console.log('Sizes:', availableSizes, '| sizeInVariations:', sizeInVariations);
       console.log('Variations:');
       product.variations.nodes.forEach((v) => {
         const colorAttr = v.attributes?.nodes.find(
@@ -244,6 +244,12 @@ const SingleProduct = ({ product }: IProductRootObject) => {
         console.log(
           `  ${colorAttr || '-'} / ${sizeAttr || '-'}: stockStatus=${v.stockStatus}, stockQuantity=${v.stockQuantity}`,
         );
+      });
+      // Show stock check results for each size
+      console.log('Size stock checks:');
+      availableSizes.forEach((size) => {
+        const result = isAttributeInStock('size', size);
+        console.log(`  ${size}: inStock=${result.inStock}`);
       });
       console.log('================================');
     }

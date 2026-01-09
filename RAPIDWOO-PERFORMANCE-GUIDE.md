@@ -218,7 +218,125 @@ const client = new ApolloClient({
 
 ---
 
-## 4. Environment Variables Required
+## 4. SSG Migration Challenges
+
+### 4.1 TypeScript Errors During SSG Conversion
+
+**Problem**: GraphQL returns `null` for optional fields, but TypeScript interfaces expected `undefined` or required values.
+
+**Errors Encountered**:
+
+- `__typename` required but not returned
+- `image: Image` vs `Image | null` mismatch
+- `salePrice`, `stockQuantity` type conflicts
+
+**Solution**: Made fields optional with `| null` to match actual API responses:
+
+```typescript
+// Before (CSR - lenient)
+interface Product {
+  image: Image;
+  salePrice: string;
+}
+
+// After (SSG - strict)
+interface Product {
+  image?: Image | null;
+  salePrice?: string | null;
+}
+```
+
+**Lesson**: SSG is stricter than CSR—types must match actual API response at build time because `getStaticProps` runs during `next build`, not in browser.
+
+---
+
+### 4.2 Build Conflicts
+
+**Problem**: Repeated "file has been unexpectedly modified" errors during development.
+
+**Cause**: Editor auto-save and `sed` commands conflicting with simultaneous file access.
+
+**Solution**:
+
+1. Use `sed` commands for atomic updates when editor conflicts occur
+2. Run `git checkout <file>` to reset to known state before retrying
+3. Close file in editor before running command-line modifications
+
+---
+
+### 4.3 Parent Directory Lockfile
+
+**Problem**: Next.js workspace detection confused by stray files in parent directory.
+
+**Symptoms**: Build errors about workspace configuration, unexpected dependency resolution.
+
+**Cause**: `C:\xampp\htdocs\package-lock.json` and `package.json` existed in parent directory.
+
+**Solution**: Removed stray `package.json` and `package-lock.json` from `C:\xampp\htdocs\`.
+
+---
+
+## 5. Debugging Methodology
+
+### 5.1 PageSpeed Filmstrip Analysis
+
+**Technique**: Use PageSpeed Insights filmstrip view to see exactly when content appears.
+
+**Key Discovery**: A score of 100 with no visible images = broken page, not fast page.
+
+**Example**:
+
+- Initial "100 score" showed empty gray boxes for 8 frames
+- After fixes, products visible from frame 1
+
+**Lesson**: Visual verification is essential—don't trust the score alone. Always check the filmstrip.
+
+---
+
+### 5.2 LCP Breakdown Analysis
+
+**Technique**: Click "Largest Contentful Paint element" in PageSpeed to see timing breakdown.
+
+**Key Discovery**:
+| Phase | Time | Percentage |
+|-------|------|------------|
+| Render delay | 1,040ms | **80%** |
+| Image download | 100ms | 8% |
+| Other | ~150ms | 12% |
+
+**Insight**: The images weren't slow to download—the browser was downloading the wrong size. 80% of LCP was "render delay" waiting for the oversized image.
+
+**Root Cause**: `sizes="100vw"` made browser pick `w_800` instead of `w_400` for 2-column grid.
+
+**Lesson**: LCP breakdown reveals whether the problem is network, rendering, or image selection.
+
+---
+
+### 5.3 Apollo go.apollo.dev Investigation
+
+**Concern**: Network tab showed calls to `go.apollo.dev`, raising telemetry concerns.
+
+**Investigation**: Examined Apollo Client configuration and network activity.
+
+**Finding**: Messages were deprecation warnings, NOT telemetry:
+
+- `onCompleted` callbacks deprecated in Apollo 3.14.0
+- These are console warnings that reference Apollo documentation
+
+**Action Taken**: Added `connectToDevTools: false` as best practice:
+
+```javascript
+const client = new ApolloClient({
+  connectToDevTools: false, // Disable DevTools extension connection
+  // ...
+});
+```
+
+**Lesson**: Always investigate network activity, but distinguish between documentation links and actual data transmission.
+
+---
+
+## 6. Environment Variables Required
 
 ```bash
 # Cloudinary cloud name (no API key needed for fetch mode)
@@ -237,7 +355,7 @@ STRIPE_SECRET_KEY=sk_test_...
 
 ---
 
-## 5. On-Demand Revalidation
+## 7. On-Demand Revalidation
 
 When WooCommerce products change, trigger ISR revalidation:
 
@@ -257,7 +375,7 @@ curl -X POST https://rapidwoo-storefront.vercel.app/api/revalidate \
 
 ---
 
-## 6. Key Technical Insights
+## 8. Key Technical Insights
 
 1. **LCP Breakdown Revealed the Truth**
    - PageSpeed showed 80% of LCP time was "render delay", only 20% was image download
@@ -279,7 +397,7 @@ curl -X POST https://rapidwoo-storefront.vercel.app/api/revalidate \
 
 ---
 
-## 7. Files Modified This Session
+## 9. Files Modified This Session
 
 | File                                               | Change                           |
 | -------------------------------------------------- | -------------------------------- |
@@ -297,7 +415,7 @@ curl -X POST https://rapidwoo-storefront.vercel.app/api/revalidate \
 
 ---
 
-## 8. Git Commits This Session
+## 10. Git Commits This Session
 
 ```
 bbb965fb fix: correct sizes attribute for 2-col mobile grid
@@ -314,7 +432,7 @@ ade31d3f chore: disable apollo devtools connection
 
 ---
 
-## 9. Performance Testing
+## 11. Performance Testing
 
 **Test URLs**:
 
@@ -334,7 +452,7 @@ ade31d3f chore: disable apollo devtools connection
 
 ---
 
-## 10. Do Not Modify
+## 12. Do Not Modify
 
 These configurations are optimized and stable:
 

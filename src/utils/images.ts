@@ -100,7 +100,7 @@ export function getImageSrcSet(sourceUrl: string | undefined): string {
  * Default sizes attribute for responsive images
  * Matches the typical grid layout breakpoints
  */
-export const DEFAULT_SIZES = '(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw';
+export const DEFAULT_SIZES = '(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw';
 
 /**
  * Props interface for optimized image components

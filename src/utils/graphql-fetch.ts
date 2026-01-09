@@ -43,7 +43,7 @@ export async function fetchGraphQL<T>(
 // Query strings for SSG (gql tag not available server-side without Apollo)
 export const PRODUCTS_QUERY = `
   query AllProducts {
-    products(first: 50) {
+    products(first: 12) {
       nodes {
         databaseId
         name

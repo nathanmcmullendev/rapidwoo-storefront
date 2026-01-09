@@ -44,6 +44,8 @@ const ProductCard = ({
             <img
               src={imageUrl}
               alt={name}
+              width={400}
+              height={533}
               srcSet={srcSet || undefined}
               sizes={srcSet ? DEFAULT_SIZES : undefined}
               className="w-full h-full object-cover object-center transition duration-300 group-hover:scale-105"

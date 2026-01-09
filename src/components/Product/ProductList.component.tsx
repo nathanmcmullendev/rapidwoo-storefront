@@ -21,7 +21,7 @@ const ProductList = ({ products, title }: ProductListProps) => {
     productTypes,
     toggleProductType,
     resetFilters,
-    filterProducts
+    filterProducts,
   } = useProductFilters(products);
 
   const filteredProducts = filterProducts(products);
@@ -49,7 +49,9 @@ const ProductList = ({ products, title }: ProductListProps) => {
           </h1>
 
           <div className="flex flex-wrap items-center justify-center sm:justify-end gap-2 sm:gap-4">
-            <label htmlFor="sort-select" className="text-sm font-medium">Sort by:</label>
+            <label htmlFor="sort-select" className="text-sm font-medium">
+              Sort by:
+            </label>
             <select
               id="sort-select"
               value={sortBy}
@@ -65,7 +67,7 @@ const ProductList = ({ products, title }: ProductListProps) => {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {filteredProducts.map((product: Product) => (
+          {filteredProducts.map((product: Product, index: number) => (
             <ProductCard
               key={product.databaseId}
               databaseId={product.databaseId}
@@ -76,6 +78,7 @@ const ProductList = ({ products, title }: ProductListProps) => {
               onSale={product.onSale}
               slug={product.slug}
               image={product.image}
+              preloaded={index < 6}
             />
           ))}
         </div>

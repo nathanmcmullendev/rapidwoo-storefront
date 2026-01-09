@@ -26,14 +26,14 @@ const ProductCard = ({
   image,
 }: ProductCardProps) => {
   // Add padding/empty character after currency symbol
-  const formattedPrice = price ? paddedPrice(price, 'kr') : price;
-  const formattedRegularPrice = regularPrice ? paddedPrice(regularPrice, 'kr') : regularPrice;
-  const formattedSalePrice = salePrice ? paddedPrice(salePrice, 'kr') : salePrice;
+  const formattedPrice = price ? paddedPrice(price, '$') : price;
+  const formattedRegularPrice = regularPrice ? paddedPrice(regularPrice, '$') : regularPrice;
+  const formattedSalePrice = salePrice ? paddedPrice(salePrice, '$') : salePrice;
 
   return (
     <div className="group">
       <div className="aspect-[3/4] overflow-hidden bg-gray-100 relative">
-        <Link href={`/produkt/${slug}`}>
+        <Link href={`/product/${slug}`}>
           {image?.sourceUrl ? (
             <Image
               src={image.sourceUrl}
@@ -51,7 +51,7 @@ const ProductCard = ({
         </Link>
       </div>
 
-      <Link href={`/produkt/${slug}`}>
+      <Link href={`/product/${slug}`}>
         <div className="mt-4">
           <p className="text-xl font-bold text-center cursor-pointer hover:text-gray-600 transition-colors">
             {name}

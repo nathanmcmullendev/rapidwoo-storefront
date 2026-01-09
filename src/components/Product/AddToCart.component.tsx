@@ -99,12 +99,19 @@ const AddToCart = ({
   const { syncWithWooCommerce, isLoading: isCartLoading } = useCartStore();
   const [requestError, setRequestError] = useState<boolean>(false);
 
-  const productId = product?.databaseId ? product?.databaseId : variationId;
+  const productId = product?.databaseId;
 
-  const productQueryInput = {
-    clientMutationId: uuidv4(), // Generate a unique id.
-    productId,
-  };
+  // For variable products, we need both productId and variationId
+  const productQueryInput = variationId
+    ? {
+        clientMutationId: uuidv4(),
+        productId,
+        variationId,
+      }
+    : {
+        clientMutationId: uuidv4(),
+        productId,
+      };
 
   // Get cart data query
   const { data, refetch } = useQuery(GET_CART, {
@@ -148,7 +155,7 @@ const AddToCart = ({
         buttonDisabled={addToCartLoading || requestError || isCartLoading}
         fullWidth={fullWidth}
       >
-        {isCartLoading ? 'Loading...' : 'KJØP'}
+        {isCartLoading ? 'Loading...' : 'ADD TO CART'}
       </Button>
     </>
   );

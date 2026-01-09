@@ -5,6 +5,11 @@ const nextConfig = {
     remotePatterns: [
       {
         protocol: 'https',
+        hostname: 'rapidwoo.com',
+        pathname: '**',
+      },
+      {
+        protocol: 'https',
         hostname: 'swewoocommerce.dfweb.no',
         pathname: '**',
       },
